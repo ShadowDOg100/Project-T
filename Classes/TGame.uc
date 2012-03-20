@@ -4,6 +4,11 @@ static event class<GameInfo> SetGameType(string MapName, string Options, string 
 {
     return class'TGame';
 }
+
+function bs()
+{
+
+}
  
 function PrintScreenDebug(string debugText)
 {
