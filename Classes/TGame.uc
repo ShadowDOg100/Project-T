@@ -12,6 +12,10 @@ function PrintScreenDebug(string debugText)
     if (PC != None)
        PC.ClientMessage("TGame: " $ debugText);
 } 
+function bs2()
+{
+
+}
  
 function PostBeginPlay()
 {
