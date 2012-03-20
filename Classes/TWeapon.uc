@@ -270,12 +270,16 @@ simulated event SetPosition(UDKPawn Holder)
 	local vector2D ViewportSize;
 	local bool bIsWideScreen;
 	local vector SpecViewLoc;
+	local int x;
+	local int y;
+        
+        //y = 1000;
 
 	if ( !Holder.IsFirstPerson() )
 		return;
-	
+
 	Mesh.SetHidden(False);
-	
+
 	foreach LocalPlayerControllers(class'TPlayerController', PC)
 	{
 		LocalPlayer(PC.Player).ViewportClient.GetViewportSize(ViewportSize);
@@ -291,8 +295,27 @@ simulated event SetPosition(UDKPawn Holder)
 	if(bZoom)
 	{
 		DrawOffset.Z = TPawn(Holder).GetEyeHeight() - 5 + ViewOffset.Z;
-		SetLocation(Holder.Location + DrawOffset);
 		FinalRotation = (Holder.Controller == None) ? Holder.GetBaseAimRotation() : Holder.Controller.Rotation;
+		//PC.ClientMessage("FinalRotation.pitch " $ FinalRotation.pitch);
+		if(FinalRotation.pitch <=18000 && FinalRotation.pitch >= 0)
+		{
+                    x = FinalRotation.pitch;
+                    for(x = 0; x < FinalRotation.pitch; x++)
+                    {
+                        x++;
+                        FinalRotation.pitch = FinalRotation.pitch - (x/5000);
+                    }
+                    PC.ClientMessage("x=" $ x);
+                }else if(FinalRotation.pitch <= 66000 && FinalRotation.pitch > 47000)
+                {
+                    if(FinalRotation.pitch == 47535)
+                    {
+                        x=10;
+                        DrawOffset.Z = DrawOffset.Z - x;
+
+                    }
+                }
+                SetLocation(Holder.Location + DrawOffset);
 		SetRotation(FinalRotation);
 		return;
 	}
@@ -375,10 +398,10 @@ exec function Gotozoom()
 	local TPlayerController PC;
 
 	PC = TPlayerController(Instigator.Controller);
-	PC.ClientMessage("GotoZoom");
+	//PC.ClientMessage("GotoZoom");
 	if (GetZoomedState() == ZST_NotZoomed)
 	{
-            PC.ClientMessage("ZST_NotZoomed");
+            //PC.ClientMessage("ZST_NotZoomed");
 		if (bAbortZoom) // stop the zoom after 1 tick
 		{
 			SetTimer(0.0001, false, 'EndZoom');
