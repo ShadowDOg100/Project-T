@@ -3,10 +3,6 @@
  */
 class TWeap_Pistol_Generic extends TWeap_Pistol;
 
-// AI properties (for shock combos)
-var bool bRegisterTarget;
-var int CurrentPath;
-
 function SetFlashLocation( vector HitLocation )
 {
 	local byte NewFireMode;
