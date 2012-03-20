@@ -350,7 +350,7 @@ defaultproperties
 	ShouldFireOnRelease(1)=1
 
 	ShotCost(0)=1
-	ShotCost(1)=1
+	ShotCost(1)=0
 
 	FireOffset=(X=20,Y=5)
 	PlayerViewOffset=(X=17,Y=10.0,Z=-8.0)
