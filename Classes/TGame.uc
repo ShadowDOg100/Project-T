@@ -17,6 +17,11 @@ function PostBeginPlay()
 {
 	Super.PostBeginPlay();
 }
+
+function bs()
+{
+
+}
  
 DefaultProperties
 {
