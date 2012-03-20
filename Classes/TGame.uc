@@ -10,6 +10,11 @@ function bs()
 
 }
  
+function bs2()
+{
+
+}
+
 function PrintScreenDebug(string debugText)
 {
     local PlayerController PC;
