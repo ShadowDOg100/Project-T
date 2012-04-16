@@ -86,4 +86,9 @@ defaultproperties
 	CrossHairCoordinates=(U=256,V=0,UL=64,VL=64)
 	
 	WeaponSubClass = 1;
+
+    IronsightViewOffset = (X=47.0)
+    AimingMeshFOV = 45.0f
+
+    AimingFOV = 80.0f
 }

@@ -1,4 +1,3 @@
-
 class TWeapon extends UDKWeapon
 	dependson(TPlayerController)
 	config(Weapon)
@@ -17,10 +16,6 @@ var() float					MuzzleFlashDuration;
 
 
 //            Zoom variables
-var bool bZoom;
-var float	ZoomedTargetFOV;
-var float	ZoomedRate;
-var float       NewZoomInterpSpeed;
 /** Zoom minimum time, from UT3 Sniper Rifle*/
 var bool bAbortZoom;
 /** Are we zoomed */
@@ -61,6 +56,22 @@ var array<int> ShotCost;
 
 /** Offset from view center */
 var(FirstPerson) vector PlayerViewOffset; 
+
+/** Zoom stuff */
+var() vector IronsightViewOffset;
+var() float AimingMeshFOV;
+var() float DefaultMeshFOV;
+var float CurrentMeshFOV;
+var float DesiredMeshFOV;
+var(Animations) name ArmAimAnim;
+var(Animations) name ArmAimIdlAnim;
+var(Animations) name ArmAimFireAnim;
+var float ArmAimAnimRate;
+var float ArmAimIdleAnimRate;
+var float ArmAimFireAnimRate;
+var bool bIsAiming;
+var() float AimingFOV;
+var bool bAimingDelay;
 
 simulated function PostBeginPlay()
 {
@@ -270,8 +281,11 @@ simulated event SetPosition(UDKPawn Holder)
 	local vector2D ViewportSize;
 	local bool bIsWideScreen;
 	local vector SpecViewLoc;
-	local int x;
-	local int y;
+    local float theta;
+    local float z;
+    local float x;
+    local float y;
+    local float xy;
         
         //y = 1000;
 
@@ -291,34 +305,6 @@ simulated event SetPosition(UDKPawn Holder)
 	Mesh.SetRotation(default.Mesh.Rotation);
 
 	ViewOffset = PlayerViewOffset;
-
-	if(bZoom)
-	{
-		DrawOffset.Z = TPawn(Holder).GetEyeHeight() - 5 + ViewOffset.Z;
-		FinalRotation = (Holder.Controller == None) ? Holder.GetBaseAimRotation() : Holder.Controller.Rotation;
-		//PC.ClientMessage("FinalRotation.pitch " $ FinalRotation.pitch);
-		if(FinalRotation.pitch <=18000 && FinalRotation.pitch >= 0)
-		{
-                    x = FinalRotation.pitch;
-                    for(x = 0; x < FinalRotation.pitch; x++)
-                    {
-                        x++;
-                        FinalRotation.pitch = FinalRotation.pitch - (x/5000);
-                    }
-                    PC.ClientMessage("x=" $ x);
-                }else if(FinalRotation.pitch <= 66000 && FinalRotation.pitch > 47000)
-                {
-                    if(FinalRotation.pitch == 47535)
-                    {
-                        x=10;
-                        DrawOffset.Z = DrawOffset.Z - x;
-
-                    }
-                }
-                SetLocation(Holder.Location + DrawOffset);
-		SetRotation(FinalRotation);
-		return;
-	}
 
 	// Calculate the draw offset
 	if ( Holder.Controller == None )
@@ -387,48 +373,6 @@ simulated event SetPosition(UDKPawn Holder)
 	SetRotation(FinalRotation);
 }
 
-
-
-
-/*****zoom functions******/
-
-exec function Gotozoom()
-{
-
-	local TPlayerController PC;
-
-	PC = TPlayerController(Instigator.Controller);
-	//PC.ClientMessage("GotoZoom");
-	if (GetZoomedState() == ZST_NotZoomed)
-	{
-            //PC.ClientMessage("ZST_NotZoomed");
-		if (bAbortZoom) // stop the zoom after 1 tick
-		{
-			SetTimer(0.0001, false, 'EndZoom');
-		}
-		
-		PC.DesiredFOV = 50;
-		PC.ClientMessage(PC.DesiredFOV);
-
-		bZoom = true;
-	}
-}
-
-/** This runs when you release the right click to leave zoom aim mode and calls LeaveZoom and ServerLeaveZoom so everything is in sync again */
-exec function EndZoom()
-{
-        local TPlayerController PC;
-	PC = TPlayerController(Instigator.Controller);
-
-        PC.ClientMessage("Weapon EndZoom");
-	bAbortZoom = false;
-	bZoom = false;
-	if (PC != none)
-	{
-                PC.DesiredFOV = PC.DefaultFOV;
-	}
-}
-
 /**
  * Returns true if we are currently zoomed
  */
@@ -448,6 +392,188 @@ simulated function EZoomState GetZoomedState()
 	return ZST_NotZoomed;
 }
 
+simulated function RaiseWeapon()
+{
+    if(IsInState('Inactive'))
+    {
+        return;
+    }
+
+    if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
+    {
+        bAimingDelay = true;
+        return;
+    }
+
+    if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayerIdleAnimation');
+
+    if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
+
+    if(IsTimerActive('TimeWeaponLowering')) ClearTimer('TimWeaponLowering');
+
+    bAmingDelay = true;
+
+    if(IsPlayingAnim(ArmAimFireAnim))
+    {
+        SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayerIdleAnimation');
+    }
+    else if(IsPlayingAnim(ArmFireAnim))
+    {
+        SetTimer(GetAnimTimeLeft() + 0.01, false, 'TimeWeaponRaising');
+    }
+    else
+    {
+        TimeWeaponRaising();
+    }
+}
+
+simulated function LowerWeapon()
+{
+    if(IsInState('Inactive'))
+    {
+        return;
+    }
+
+    if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
+    {
+        bAmingDelay = true;
+    }
+
+    if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayerIdleAnimation');
+
+    if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
+
+    if(IsTimerActive('TimeWeaponLowering')) ClearTimer('TimWeaponLowering');
+
+    bAmingDelay = true;
+
+    if(IsPlayingAnim(ArmAimFireAnim))
+    {
+        SetTimer(GetAnimTimeLeft() + 0.01, falsse, 'TimeWeaponLowering');
+    }
+    else if(IsPlayingAnim(ArmFireAnim))
+    {
+        SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayIdleAnimation');
+    }
+    else
+    {
+        TimeWeaponLowering();
+    }
+}
+
+simulated function TimeWeaponRaising()
+{
+    local float AimTime;
+    local float TimeDiff;
+
+    if(IsPlayingAnim(ArmAimAnim))
+    {
+        TimeDiff = GetAnimTimeLeft();
+        AnimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false, , TimDiff);
+    }
+    else if(IsPlayingAnim(ArmAimFireAnim))
+    {
+        AnimTime = GetAnimTimeLeft() + 0.01;
+    }
+    else
+    {
+        AnimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false);
+    }
+
+    bIsAiming = true;
+    ArmIdleAnims[0] = ArmAimIdleAnim;
+    ArmFireAnim = ArmAimFireAnim;
+    ArmViewOffset = IronsightViewOffset;
+    SetFOV(AimingFOV);
+    SetMeshFOV(AimingMeshFOV);
+    SetTimer(AimTime, false, 'PlayIdleAnimation');
+}
+
+simulated function TimeWeaponLowering()
+{
+    local float AimTime;
+    local float TimeDiff;
+
+    if(IsPlayingAnim(ArmAimAnim))
+    {
+        TimeDiff = GetAnimTimeLeft();
+        AnimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false, , TimDiff);
+    }
+    else if(IsPlayingAnim(ArmAimFireAnim))
+    {
+        AnimTime = GetAnimTimeLeft() + 0.01;
+    }
+    else
+    {
+        AnimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false);
+    }
+
+    bIsAiming = false;
+    ArmIdleAnims[0] = default.ArmIdleAnims[0];
+    ArmFireAnim = default.ArmFirAnim;
+    ArmViewOffset = default.ArmViewOffset;
+    SetFOV();
+    SetMeshFOV(DefaultMeshFOV);
+    SetTimer(Abs(AimTime), false, 'PlayIdleAnimation');
+}
+
+simulated function SetFOV(optional float NewFOV)
+{
+    local TPlayerController PC;
+
+    if((Instigator != none) && Instigator.Controller != none)
+    {
+        PC = TPlayerController(Instigator.Controller);
+        if(NewFOV > 0.0)
+        {
+            PC.StartZoomNonlinear(NewFOV, 10.0f);
+        }
+        else
+        {
+            PC.EndZoomNonlinear(10.0f);
+        }
+    }
+}
+
+simulated function SetMeshFOV(float NewFOV, optional bool bForceFOV)
+{
+    if((Mesh != none) && Mesh.bAttached)
+    {
+        DesiredMeshFOV = NewFOV;
+    }
+}
+
+simulated function AdjustMeshFOV(float DeltaTime)
+{
+    if((Mesh != none) && Mesh.bAttached)
+    {
+        if(CurrentMeshFOV != DesiredMeshFOV)
+        {
+            CurrentMeshFOV = FInterpTo(CurrentMeshFOV, DesiredMeshFOV, DeltaTime, 10.0f);
+            UDKSkeletalMeshComponent(Mesh).SetFOV(CurrentMeshFOV);
+
+            if((Firearm != none) && Firearm.Mesh != none)
+            {
+                UDKSkeletalMeshComponent(Firearm.Mesh).SetFOV(CurrentMeshFOV);
+            }
+        }
+    }
+}
+
+simulated event Tick(float DeltaTime)
+{
+    super.Tick(DeltaTime);
+
+    AdjustMeshFOV(DeltaTime);
+}
+
+simulated function PlayWeaponAnimation(name Sequence, float fDesiredDuration, optional bool bLoop, optional SkeletalMeshComponent SkelMesh)
+{
+	if (Mesh != None && Mesh.bAttached)
+	{
+		Super.PlayWeaponAnimation(Sequence, fDesiredDuration, bLoop, SkelMesh);
+	}
+}
 
 simulated state WeaponEquipping
 {
@@ -822,14 +948,23 @@ defaultproperties
 
 	EquipTime=+0.45
 	PutDownTime=+0.33
-
-	bZoom = false;
-	ZoomedTargetFOV = 50.0;
-        ZoomedRate = 300000.0;
-        NewZoomInterpSpeed = 20.0;
-
-
 	
+    IronsightViewOffset = (X=40.0)
+    DefaultMeshFOV = 60.0f
+    CurrentMeshFOV = 60.0f
+    DesiredMeshFOV = 60.0f
+    AimingMeshFOV = 30.0f
+
+    ArmAimAnim = 1p_ToAim
+    ArmAimIdleAnim = 1p_AimIdle
+    ArmAimFireAnim = 1p_AimFire
+
+    ArmAimAnimRate = 1.0
+    ArmAimIdleAnimRate = 1.0
+    ArmAimFireAnimRate = 1.0
+
+    AimingFOV = 60.0f
+
 	InventorySlot = 0;
 	WeaponSubClass = 0;
 }

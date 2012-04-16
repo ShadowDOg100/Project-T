@@ -10,11 +10,69 @@ var ForceFeedbackWaveform CameraShakeShortWaveForm, CameraShakeLongWaveForm;
 /** How fast (degrees/sec) should a zoom occur */
 var float FOVLinearZoomRate;
 /** If TRUE, FOV interpolation for zooming is nonlineear, using FInterpTo.  If FALSE, use linear interp. */
-var transient bool bNonlinearZoomInterpolation;
+var bool bNonlinearZoomInterpolation;
 /** Interp speed (as used in FInterpTo) for nonlinear FOV interpolation. */
-var transient float FOVNonlinearZoomInterpSpeed;
+var float FOVNonlinearZoomInterpSpeed;
 
+var float ZoomRotationModifier;
 
+var bool bCurrentCamAnimEffectsFOV;
+
+simulated function StartZoom(float NewDesiredFOV, float NewZoomRate)
+{
+	FOVLinearZoomRate = NewZoomRate;
+	DesiredFOV = NewDesiredFOV;
+	
+	bNonlinearZoomInterpolation = false;
+	FOVNonlinearZoomInterpSpeed = 0.0;
+}
+
+simulated function StartZoomNonlinear(float NewDesiredFOV, float NewZoomRate)
+{
+	FOVLinearZoomRate = NewZoomRate;
+	DesiredFOV = NewDesiredFOV;
+	
+	bNonlinearZoomInterpolation = true;
+	FOVNonlinearZoomInterpSpeed = 0.0;
+}
+
+simulated function StopZoom()
+{
+	DesiredFOV = FOVAngle;
+	FOVLinearZoomRate = 0.0;
+}
+
+simulated function EndZoom()
+{
+	DesiredFOV = default.DefaultFOV;
+	FOVAngle = default.DefaultFOV;
+	FOVLinearZoomRate = 0.0;
+	FOVNonlinearZoomInterpSpeed = 0.0;
+}
+
+simulated function EndZoomNonlinear(float ZoomInterpSpeed)
+{
+	DesiredFOV = default.DefaultFOV;
+	FOVNonlinearZoomInterpSpeed = ZoomInterpSpeed;
+	bNonlinearZoomInterpolation = true;
+	FOVLinearZoomRate = 0.0;
+}
+
+reliable simulated client function ClientEndZoom()
+{
+	EndZoom();
+}
+
+function OnUpdatePropertyFOVAngle()
+{
+	bCurrentCamAnimEffectsFOV = true;
+	FOVAngle = DesiredFOV + (FOVAngle - 90.0);
+}
+
+event float GetFOVAngle()
+{
+	return FOVAngle;
+}
 
 exec function SwitchWeapon(byte T)
 {
@@ -99,20 +157,49 @@ function PlayCameraAnim( CameraAnim AnimToPlay, optional float Scale=1.f, option
 	bCurrentCamAnimIsDamageShake = bIsDamageShake;
 }
 
+simulated exec function RaiseWeapon()
+{
+    if((TPawn(Pawn) == none) || Pawn.Weapon == none) return;
+
+    TWeapon(TPawn(Pawn).Weapon).RaiseWeapon();
+}
+
+simulated exec function LowerWeapon()
+{
+    if((TPawn(Pawn) == none) || Pawn.Weapon == none) return;
+
+    TWeapon(TPawn(Pawn).Weapon).LowerWeapon();
+}
+
 function AdjustFOV(float DeltaTime)
 {
-        if( FOVAngle != DesiredFOV)
-        {
-                ClientMessage("Zooming in " $ FOVAngle $ " : " $ DesiredFOV);
-                if(FOVAngle > DesiredFOV)
-                        FOVAngle = FOVAngle - FMax(7, 0.9 * DeltaTime * (FOVAngle - DesiredFOV));
-                else
-                        FOVAngle = FOVAngle - FMin(-7, 0.9 * DeltaTime * (FOVAngle - DesiredFOV));
-                if(Abs(FOVAngle - DesiredFOV) <= 10)
-                        FOVAngle = DesiredFOV;
-                PlayerCamera.SetFov(FOVAngle);
-                ClientMessage("Zoomed in " $ FOVAngle $ " : " $ DesiredFOV);
-        }
+	local float DeltaFOV;
+	if( FOVAngle != DesiredFOV && (!bCurrentCamAnimEffectsFOV || CameraAnimPlayer.bFinished))
+	{
+		if(bNonlinearZoomInterpolation)
+		{
+			FOVAngle = FInterpTo(FOVAngle, DesiredFOV, DeltaTime, FOVNonlinearZoomInterpSpeed);
+		}
+		else
+		{	
+			if(FOVLinearZoomRate > 0.0)
+			{
+				DeltaFOV = FOVLinearZoomRate * DeltaTime;
+				if(FOVAngle > DesiredFOV)
+				{
+					FOVAngle = FMax(DesiredFOV, (FOVAngle - DeltaFOV));
+				}
+				else
+				{
+					FOVAngle = FMin(DesiredFOV, (FOVAngle + DeltaFOV));
+				}
+			}
+			else
+			{
+				FOVAngle = DesiredFOV;
+			}
+		}
+	}
 }
 
 defaultproperties
