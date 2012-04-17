@@ -1,5 +1,6 @@
 class TInventoryManager extends InventoryManager
- config(Game);
+	dependson(TWeapon)
+	config(Weapon);
 
 var Weapon PreviousWeapon;
 
@@ -123,7 +124,7 @@ simulated function ChangedWeapon()
 
 reliable client function ClientSetCurrentWeapon(Weapon DesiredWeapon)
 {
- SetPendingWeapon(DesiredWeapon);
+	SetPendingWeapon(DesiredWeapon);
 }
 
 simulated function Inventory CreateInventory(class<Inventory> NewInventoryItemClass, optional bool bDoNotActivate)
@@ -140,26 +141,26 @@ simulated function bool AddInventory(Inventory NewItem, optional bool bDoNotActi
 
 simulated function DiscardInventory()
 {
- local Vehicle V;
+	local Vehicle V;
 
- if (Role == ROLE_Authority)
- {
- Super.DiscardInventory();
+	if (Role == ROLE_Authority)
+	{
+		Super.DiscardInventory();
 
- V = Vehicle(Owner);
- if (V != None && V.Driver != None && V.Driver.InvManager != None)
- {
- V.Driver.InvManager.DiscardInventory();
- }
- }
+		V = Vehicle(Owner);
+		if (V != None && V.Driver != None && V.Driver.InvManager != None)
+		{
+			V.Driver.InvManager.DiscardInventory();
+		}
+	}
 }
 
 simulated function RemoveFromInventory(Inventory ItemToRemove)
 {
- if (Role==ROLE_Authority)
- {
- Super.RemoveFromInventory(ItemToRemove);
- }
+	if (Role==ROLE_Authority)
+	{
+		Super.RemoveFromInventory(ItemToRemove);
+	}
 }
 
   //Scans the inventory looking for any of type InvClass.&nbsp; If it finds it it returns it, other
@@ -167,25 +168,25 @@ simulated function RemoveFromInventory(Inventory ItemToRemove)
  
 function Inventory HasInventoryOfClass(class<Inventory> InvClass)
 {
- local inventory inv;
+	local inventory inv;
 
- inv = InventoryChain;
- while(inv!=none)
- {
- if (Inv.Class==InvClass)
- return Inv;
+	inv = InventoryChain;
+	while(inv!=none)
+	{
+		if (Inv.Class==InvClass)
+			return Inv;
 
- Inv = Inv.Inventory;
- }
- return none;
+		Inv = Inv.Inventory;
+	}
+	return none;
 }
 
 simulated function SwitchToPreviousWeapon()
 {
- if ( PreviousWeapon!=none && PreviousWeapon != Pawn(Owner).Weapon )
- {
- PreviousWeapon.ClientWeaponSet(false);
- }
+	if ( PreviousWeapon!=none && PreviousWeapon != Pawn(Owner).Weapon )
+	{
+		PreviousWeapon.ClientWeaponSet(false);
+	}
 }
 
 defaultproperties
@@ -194,3 +195,4 @@ defaultproperties
  PendingFire(0)=0
  PendingFire(1)=0
 }
+

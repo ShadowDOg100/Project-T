@@ -15,7 +15,6 @@ var int equiped;
 var bool     bInitialized;
 
 var array<String> Slots;
-var class<TWeapon> WeaponClass[4];
 var class<TWeapon> WeaponClasses[33];
 
 var localized string AcceptString, CancelString;
@@ -240,12 +239,6 @@ defaultproperties
     bDisplayWithHudOff = TRUE
 	bInitialized = FALSE
 	MovieInfo=SwfMovie'T.Inventory'
-	
-
-	WeaponClass(0)=class'TWeap_Pistol'
-	WeaponClass(1)=class'TWeap_Shotgun'
-	WeaponClass(2)=class'TWeap_Assaultrifle'
-	WeaponClass(3)=class'TWeap_SpecialWeapon'
 	
 	WeaponClasses(00)=class'TWeap_Pistol_Generic';
 	WeaponClasses(01)=class'TWeap_Pistol_Burst';

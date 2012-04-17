@@ -132,16 +132,7 @@ event DrawHUD()
 {
 	local float XL, YL, YPos;
 
-	if ( bCrosshairOnFriendly )
-	{
-		// verify that crosshair trace might hit friendly
-		bGreenCrosshair = CheckCrosshairOnFriendly();
-		bCrosshairOnFriendly = false;
-	}
-	else
-	{
-		bGreenCrosshair = false;
-	}
+	bGreenCrosshair = false;
 
 	if ( bShowDebugInfo )
 	{
@@ -350,7 +341,7 @@ exec function PickUp()
 		{
 			if(WeaponList[num1].GetWeaponSubClass() == num2)
 			{
-				WeaponList[num1].AddOtherAmmo(PickupActor.getAmmo() + PickupActor.getClip());
+				WeaponList[num1].AddStorageAmmo(PickupActor.getAmmo() + PickupActor.getClip());
 				PickupActor.Destroy();
 				ToggleWeaponPickup();
 				bTouch = false;

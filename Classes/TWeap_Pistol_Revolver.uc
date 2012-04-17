@@ -1,13 +1,10 @@
-/**
- *	TWeap_Pistol_Revolver
- *
- *	Creation date: 15/11/2011 19:31
- *	Copyright 2011, Shadow
- */
-class TWeap_Pistol_Revolver extends TWeap_Pistol;
-
-
+class TWeap_Pistol_Revolver extends TWeapon;
 
 defaultproperties
 {
+	// mesh settings
+	ArmViewOffset = (X=43.0)
+	
+	// firearm
+	FirearmClass = class'TFirearm_Pistol_Revolver'
 }

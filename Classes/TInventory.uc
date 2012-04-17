@@ -5,5 +5,5 @@
  *	Copyright 2011, Dominque
  */
 
-class MyInventory extends Inventory;
+class TInventory extends Inventory;
 

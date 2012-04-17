@@ -290,45 +290,6 @@ function DrawToolTip(Canvas Cvs, PlayerController PC, string Command, float X, f
 	Cvs.Font = OrgFont;
 }
 
-function bool CheckCrosshairOnFriendly()
-{
-	local float Size;
-	local vector HitLocation, HitNormal, StartTrace, EndTrace;
-	local actor HitActor;
-	local TWeapon W;
-	local Pawn MyPawnOwner;
-
-	MyPawnOwner = Pawn(PlayerOwner.ViewTarget);
-	if ( MyPawnOwner == None )
-	{
-		return false;
-	}
-
-	W = TWeapon(MyPawnOwner.Weapon);
-	if ( W != None && W.EnableFriendlyWarningCrosshair())
-	{
-		StartTrace = W.InstantFireStartTrace();
-		EndTrace = StartTrace + W.MaxRange() * vector(PlayerOwner.Rotation);
-		HitActor = MyPawnOwner.Trace(HitLocation, HitNormal, EndTrace, StartTrace, true, vect(0,0,0),, TRACEFLAG_Bullet);
-
-		if ( Pawn(HitActor) == None )
-		{
-			HitActor = (HitActor == None) ? None : Pawn(HitActor.Base);
-		}
-	}
-	
-	if ((Pawn(HitActor) == None))
-	{
-		return false;
-	}
-
-	// if trace hits friendly, draw "no shoot" symbol
-	Size = 28 * (Canvas.ClipY / 768);
-	Canvas.SetPos( (Canvas.ClipX * 0.5) - (Size *0.5), (Canvas.ClipY * 0.5) - (Size * 0.5) );
-	return true;
-}
-
-
 simulated function DrawShadowedTile(texture2D Tex, float X, float Y, float XL, float YL, float U, float V, float UL, float VL, Color TileColor, Optional bool bScaleToRes)
 {
 	local Color B;

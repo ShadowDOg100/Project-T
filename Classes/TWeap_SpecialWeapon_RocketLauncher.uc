@@ -1,13 +1,10 @@
-/**
- *	TWeap_SpecialWeapon_RocketLauncher
- *
- *	Creation date: 15/11/2011 19:32
- *	Copyright 2011, Shadow
- */
-class TWeap_SpecialWeapon_RocketLauncher extends TWeap_SpecialWeapon;
-
-
+class TWeap_SpecialWeapon_RocketLauncher extends TWeapon;
 
 defaultproperties
 {
+	// mesh settings
+	ArmViewOffset = (X=43.0)
+	
+	// firearm
+	FirearmClass = class'TFirearm_SpecialWeapon_RocketLauncher'
 }

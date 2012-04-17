@@ -1,1 +1,0 @@
-class TParticleSystemComponent extends UDKParticleSystemComponent;

@@ -3,968 +3,686 @@ class TWeapon extends UDKWeapon
 	config(Weapon)
 	abstract;
 
-var ParticleSystem			MuzzleFlashPSCTemplate, MuzzleFlashAltPSCTemplate;
-var bool					bShowAltMuzzlePSCWhenWeaponHidden;
-var bool					bMuzzleFlashPSCLoops;
-var UTParticleSystemComponent	MuzzleFlashPSC;
-var	UDKExplosionLight		MuzzleFlashLight;
-var class<UDKExplosionLight> MuzzleFlashLightClass;
-var name					MuzzleFlashSocket;
-var bool					bMuzzleFlashAttached;
-var color					MuzzleFlashColor;
-var() float					MuzzleFlashDuration;
-
-
-//            Zoom variables
-/** Zoom minimum time, from UT3 Sniper Rifle*/
-var bool bAbortZoom;
-/** Are we zoomed */
-enum EZoomState
-{
-	ZST_NotZoomed,
-	ZST_ZoomingOut,
-	ZST_ZoomingIn,
-	ZST_Zoomed,
-};
-
-
+// -------------------------------------- INVENTORY
+/** inventory slot */
 var int InventorySlot;
+/** weapon sub class */
 var int WeaponSubClass;
+	
+// -------------------------------------- AMMUNITION
+/** magazine ammunition */
+var(Ammo) int MagAmmo;
+/** Max magazine ammunition */
+var(Ammo) int MaxMagAmmo;
+/** Max ammo storage */
+var(Ammo) int MaxAmmoCount;
+/** shot cost */
+var(Ammo) array<int> ShotCost;
+	
+// -------------------------------------- SOCKETS
+/** firearm socket */
+var(Sockets) name WeaponSocket;
 
-var class<TWeaponAttachment> 	AttachmentClass;
+// -------------------------------------- FIREARM
+/** firearm class */
+var(Firearm) class<TFirearm> FirearmClass;
+/** firearm */
+var(Firearm) TFirearm Firearm;
+	
+// -------------------------------------- ANIMATIONS
+/** arm idle animations */
+var(Animations) array<name> ArmIdleAnims;
+/** arm equip animation */
+var(Animations) name ArmEquipAnim;
+/** arm fire animation */
+var(Animations) name ArmFireAnim;
+/** arm reload animation */
+var(Animations) name ArmReloadAnim;
 
-var array<name> EffectSockets;
+// -------------------------------------- ANIMATION RATES
+/** arm idle anim rate */
+var float ArmIdleAnimRate;
+/** arm equip anim rate */
+var float ArmEquipAnimRate;
+/** arm fire anim rate */
+var float ArmFireAnimRate;
+/** arm reload anim rate */
+var float ArmReloadAnimRate;
 
-var(Sounds)	array<SoundCue>	WeaponFireSnd;
-var(Sounds) SoundCue 	WeaponEquipSnd;
-var(Sounds) SoundCue 	WeaponPutDownSnd;
+/** arms mesh vieww offset */
+var() vector ArmViewOffset;
 
-var UIRoot.TextureCoordinates CrossHairCoordinates;
-
-var array<CameraAnim> FireCameraAnim;
- 
-var int ClipCount;
-
-/** Max ammo count */
-var int MaxAmmoCount;
-
-/** Max clip count */
-var int MaxClipCount;
-
-/** Holds the amount of ammo used for a given shot */
-var array<int> ShotCost;
-
-/** Offset from view center */
-var(FirstPerson) vector PlayerViewOffset; 
-
-/** Zoom stuff */
-var() vector IronsightViewOffset;
-var() float AimingMeshFOV;
-var() float DefaultMeshFOV;
-var float CurrentMeshFOV;
-var float DesiredMeshFOV;
-var(Animations) name ArmAimAnim;
-var(Animations) name ArmAimIdlAnim;
-var(Animations) name ArmAimFireAnim;
-var float ArmAimAnimRate;
-var float ArmAimIdleAnimRate;
-var float ArmAimFireAnimRate;
-var bool bIsAiming;
-var() float AimingFOV;
-var bool bAimingDelay;
-
-simulated function PostBeginPlay()
+/** replication */
+replication
 {
-	Super.PostBeginPlay();
+	if(bNetOwner)
+		MagAmmo;
 }
 
-simulated event ReplicatedEvent(name VarName)
+/** get get weapon sub class */
+simulated function int GetWeaponSubClass()
 {
-	if ( VarName == 'AmmoCount' )
-	{
-		if ( !HasAnyAmmo() )
-		{	
-			WeaponEmpty();
-		}
-	}
-	else
-	{
-		Super.ReplicatedEvent(VarName);
-	}
+	return WeaponSubClass;
 }
 
+/** get inventory slot */
+simulated function int GetInventorySlot()
+{
+	return InventorySlot;
+}
+
+/** get ammo count */
 simulated function int GetAmmoCount()
 {
 	return AmmoCount;
 }
 
+/* get magazine ammo count */
 simulated function int GetClipCount()
 {
-	return ClipCount;
-}
- 
-function ConsumeAmmo( byte FireModeNum )
-{
-	// Subtract the Ammo
-	AddAmmo(-ShotCost[FireModeNum]);
+	return MagAmmo;
 }
 
-simulated function bool EnableFriendlyWarningCrosshair()
-{
-	return true;
-}
-
-simulated function vector InstantFireEndTrace(vector StartTrace)
-{
-	return StartTrace + vector(GetAdjustedAim(StartTrace)) * GetTraceRange();
-}
-
-simulated function vector InstantFireStartTrace()
-{
-	return Instigator.GetWeaponStartTraceLocation();
-}
-
-simulated function FireAmmunition()
-{
-   // Use ammunition to fire
-   ConsumeAmmo( CurrentFireMode );
-
-   // Handle the different fire types
-   switch( WeaponFireTypes[CurrentFireMode] )
-   {
-		case EWFT_InstantHit:
-			InstantFire();
-			break;
-
-		case EWFT_Projectile:
-			ProjectileFire();
-			break;
-
-		case EWFT_Custom:
-			CustomFire();
-			break;
-   }
-}
-
-/**
- * This function is used to add ammo back to a weapon.&nbsp; It's called from the Inventory Manager
- */
-function int AddAmmo( int Amount )
-{
-	ClipCount = Clamp(ClipCount + Amount,0,MaxClipCount);
-	return ClipCount;
-}
-
-function int AddOtherAmmo(int Amount )
-{
-	AmmoCount = Clamp(AmmoCount + Amount,0,MaxAmmoCount);
-	return AmmoCount;
-}
-
-function setAmmo(int ammo)
+/* set ammo */
+simulated function setAmmo(int ammo)
 {
 	AmmoCount = ammo;
 }
 
-function setClip(int clip)
+/* set clip */
+simulated function setClip(int clip)
 {
-	ClipCount = clip;
+	MagAmmo = clip;
 }
 
-/**
- * Returns true if the ammo is maxed out
- */
-simulated function bool AmmoMaxed(int mode)
+/** add/remove magazine ammunition */
+simulated function int AddMagAmmo(int Amount)
+{
+	MagAmmo = Clamp(MagAmmo + Amount, 0, MaxMagAmmo);
+	if(MagAmmo < 0) MagAmmo = 0;
+	
+	return MagAmmo;
+}
+
+/** add/remove ammunition storage */
+simulated function int AddStorageAmmo(int Amount)
+{
+	AmmoCount = Clamp(AmmoCount + Amount, 0 , MaxAmmoCount);
+	if(AmmoCount < 0) AmmoCount = 0;
+	
+	return AmmoCount;
+}
+
+/** weapon has magazine ammunition */
+simulated function bool HasMagazineAmmo()
+{
+	return (MagAmmo > 0);
+}
+
+/** weapon has storage ammunition */
+simulated function bool HasStorageAmmo()
+{
+	return (AmmoCount > 0);
+}
+
+/** ammunition storage is maxed out */
+simulated function bool AmmoMaxed()
 {
 	return (AmmoCount >= MaxAmmoCount);
 }
 
-simulated function bool HasAmmo( byte FireModeNum, optional int Amount )
+/** magazin is maxed out */
+simulated function bool IsMagFull()
 {
-	if (Amount==0)
-		return (ClipCount >= ShotCost[FireModeNum]);
-	else
-		return ( ClipCount >= Amount );
+	return (MagAmmo >= MaxMagAmmo);
 }
 
-/**
- * returns true if this weapon has any ammo
- */
+/** overloaded: has any amunition */
+//@notes: called by GetWeaponRating and Active.BeginState
 simulated function bool HasAnyAmmo()
 {
-	return ( ( AmmoCount > 0 ) || (ShotCost[0]==0 && ShotCost[1]==0) );
+	return (AmmoCount > 0 || MagAmmo > 0);
 }
 
-/**
- * This function retuns how much of the clip is empty.
- */
-simulated function float DesireAmmo(bool bDetour)
+/** overloaded: has ammo */
+//@notes: called by ShouldRefire and Active.BeginState
+simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 {
-	return (1.f - float(ClipCount)/MaxClipCount);
+	if(Amount == 0) return (MagAmmo >= ShotCost[FireModeNum]);
+	
+	return (MagAmmo == Amount);
 }
 
-/**
- * Returns true if the current ammo count is less than the default ammo count
- */
-simulated function bool NeedAmmo()
+/** overloaded: should refire */
+simulated function bool ShouldRefire()
 {
-	return ( AmmoCount < Default.AmmoCount );
+	// if out of magaine ammo
+	if(!HasAmmo(CurrentFireMode)) return false;
+	
+	// force stop fire for single shots at a time
+	StopFire(CurrentFireMode);
+	return false;
 }
 
-
-simulated function Loaded(optional bool bUseWeaponMax)
+/** reload weapon */
+simulated function ReloadWeapon()
 {
-	if (bUseWeaponMax)
-		AmmoCount = MaxAmmoCount;
+	// weapon is inactive or already reloading so return
+	if(IsInState('Inactive') || IsInState('WeaponReloading'))
+	{
+		return;
+	}
+	
+	// if we are client replicate to the server
+	if(Role < ROLE_Authority)
+	{
+		ServerReloadWeapon();
+	}
+	
+	// if we can reload
+	if(CanReload())
+	{
+		// begin reloading
+		GotoState('WeaponReloading');
+	}
+}
+
+/** client to server: reload weapon */
+reliable server function ServerReloadWeapon()
+{
+	ReloadWeapon();
+}
+
+/** can the weapon reload */
+simulated function bool CanReload()
+{
+	// check if we have storage ammo and our mag isn't already full
+	if(HasStorageAmmo() && !IsMagFull())
+	{
+		// can add further checks such as jumping or sprinting
+		return true;
+	}
+	
+	return false;
+}
+
+/** play weapon animation */
+simulated function float PlayWeaponAnim(name AnimName, float Rate, optional bool bLooping, optional SkeletalMeshComponent SkelMesh, optional float StartTime)
+{
+	local AnimNodeSequence AnimNode;
+	
+	// get anim node sequence
+	if(SkelMesh != none)
+	{
+		AnimNode = AnimNodeSequence(SkelMesh.Animations);
+	}
 	else
-		AmmoCount = 999;
-	ClipCount = MaxClipCount;
-}
-
-/**
- * Called when the weapon runs out of ammo during firing
- */
-simulated function WeaponEmpty()
-{
-	// If we were firing, stop
-	if ( IsFiring() )
 	{
-		GotoState('Active');
+		AnimNode = GetWeaponAnimNodeSeq();
 	}
-
-	if ( Instigator != none && Instigator.IsLocallyControlled() )
+	
+	// no sequence so return
+	if(AnimNode == none) return 0.01;
+	
+	// set anim
+	if(AnimNode.AnimSeq != none || AnimNode.AnimSeq.SequenceName != AnimName)
 	{
-		Instigator.InvManager.SwitchToBestWeapon( true );
+		AnimNode.SetAnim(AnimName);
 	}
+	
+	// no anim so return
+	if(AnimNode.AnimSeq == none) return 0.01;
+	
+	// play anim
+	AnimNode.PlayAnim(bLooping, Rate, StartTime);
+	
+	// return anim length
+	return AnimNode.GetAnimPlaybackLength();
 }
 
-
-function PrintScreenDebug(string debugText)
+/** play weapon animation by duration */
+simulated function PlayWeaponByDuration(name AnimName, float Duration, optional bool bLooping, optional SkeletalMeshComponent SkelMesh, optional float StartTime)
 {
-	local PlayerController PC;
-	PC = PlayerController(Pawn(Owner).Controller);
-	if (PC != None)
-		PC.ClientMessage("TWeapon: " $ debugText);
-}
-
-simulated function AttachWeaponTo( SkeletalMeshComponent MeshCpnt, optional Name SocketName )
-{
-	local TPawn TP;
-
-	TP = TPawn(Instigator);
-	PrintScreenDebug("Attaching Weapon");
-	// Attach 1st Person Muzzle Flashes, etc,
-	if ( Instigator.IsFirstPerson() )
+	local float Rate;
+	
+	// use mesh if none passed in
+	if((SkelMesh == none) && Mesh != none)
 	{
-		AttachComponent(Mesh);
-		EnsureWeaponOverlayComponentLast();
-		SetHidden(False);
-		Mesh.SetLightEnvironment(TP.LightEnvironment);
-		PrintScreenDebug("First Person Weapon Attached");
+		SkelMesh = SkeletalMeshComponent(Mesh);
+	}
+	
+	// if no mesh or anim then return
+	if(SkelMesh == none || AnimName == '') return;
+	
+	// get anim rate by duration
+	Rate = SkelMesh.GetAnimRateByDuration(AnimName, Duration);
+	
+	// play anim by duration
+	PlayWeaponAnim(AnimName, Rate, blooping, SkelMesh, StartTime);
+}
+
+/** currently playing an animation */
+simulated function bool IsPlayingAnim(name AnimName, optional bool bIsLooping, optional SkeletalMeshComponent SkelMesh)
+{
+	local AnimNodeSequence AnimNode;
+	
+	// get anim node sequence
+	if(SkelMesh != none)
+	{
+		AnimNode = AnimNodeSequence(SkelMesh.Animations);
 	}
 	else
 	{
-		SetHidden(True);
-		if (TP != None)
-		{
-			Mesh.SetLightEnvironment(TP.LightEnvironment);
-		}
+		AnimNode = GetWeaponAnimNodeSeq();
 	}
-	//SetSkin(TPawn(Instigator).ReplicatedBodyMaterial);
+	
+	// no sequence so return
+	if(AnimNode == none) return false;
+	
+	// not playing, or anim nname doesn't match, or is looping but the animation isn't looping
+	if(!AnimNode.bPlaying || AnimNode.AnimSeq.SequenceName != AnimName || bIsLooping && !AnimNode.bLooping)
+	{
+		return false;
+	}
+	
+	return true;
 }
 
+/** currently playing any animation */
+simulated function bool IsPlayingAnims(optional SkeletalMeshComponent SkelMesh, optional bool bLooping)
+{
+	local AnimNodeSequence AnimNode;
+	
+	// get anim node sequence
+	if(SkelMesh != none)
+	{
+		AnimNode = AnimNodeSequence(SkelMesh.Animations);
+	}
+	else
+	{
+		AnimNode = GetWeaponAnimNodeSeq();
+	}
+	
+	// no sequence so return
+	if(AnimNode == none) return false;
+	
+	// not playing, or anim nname doesn't match, or is looping but the animation isn't looping
+	if(bLooping && AnimNode.bLooping)
+	{
+		return false;
+	}
+	
+	return AnimNode.bPlaying;
+}
+
+/** get animation length */
+simulated function float GetAnimLength(name AnimName, optional SkeletalMeshComponent SkelMesh)
+{
+	local AnimNodeSequence AnimNode;
+	
+	// get anim node sequence
+	if(SkelMesh != none)
+	{
+		AnimNode = AnimNodeSequence(SkelMesh.Animations);
+	}
+	else
+	{
+		AnimNode = GetWeaponAnimNodeSeq();
+	}
+	
+	// no sequence so return
+	if(AnimNode == none) return 0.01;
+	
+	AnimNode.SetAnim(AnimName);
+	return AnimNode.GetAnimPlaybackLength();
+}
+
+/** get animations time remaining */
+simulated function float GetAnimTimeLeft(optional SkeletalMeshComponent SkelMesh)
+{
+	local AnimNodeSequence AnimNode;
+	
+	// get anim node sequence
+	if(SkelMesh != none)
+	{
+		AnimNode = AnimNodeSequence(SkelMesh.Animations);
+	}
+	else
+	{
+		AnimNode = GetWeaponAnimNodeSeq();
+	}
+	
+	// no sequence so return
+	if(AnimNode == none) return 0.01;
+	
+	return AnimNode.GetTimeLeft();
+}
+
+/** overloaded: align the arm mesh player view */
 simulated event SetPosition(UDKPawn Holder)
 {
-	local vector DrawOffset, ViewOffset, FinalLocation;
-	local rotator NewRotation, FinalRotation, SpecRotation;
-	local TPlayerController PC;
-	local vector2D ViewportSize;
-	local bool bIsWideScreen;
-	local vector SpecViewLoc;
-    local float theta;
-    local float z;
-    local float x;
-    local float y;
-    local float xy;
-        
-        //y = 1000;
-
-	if ( !Holder.IsFirstPerson() )
-		return;
-
-	Mesh.SetHidden(False);
-
-	foreach LocalPlayerControllers(class'TPlayerController', PC)
+	local vector ViewOffset, DrawOffset;
+	local rotator NewRotation;
+	
+	// if we're not in first person just return
+	if(!Holder.IsFirstPerson()) return;
+	
+	// set view offset based on our arm view offset
+	ViewOffset = ArmViewOffset;
+	
+	// calculate location and rotation
+	DrawOffset.Z = TPawn(Holder).GetEyeHeight();
+	DrawOffset = DrawOffset + (ViewOffset >> Holder.Controller.Rotation);
+	DrawOffset = Holder.Location + DrawOffset;
+	
+	if(Holder.Controller == none)
 	{
-		LocalPlayer(PC.Player).ViewportClient.GetViewportSize(ViewportSize);
-		break;
-	}
-	bIsWideScreen = (ViewportSize.Y > 0.f) && (ViewportSize.X/ViewportSize.Y > 1.7);
-
-	Mesh.SetScale3D(default.Mesh.Scale3D);
-	Mesh.SetRotation(default.Mesh.Rotation);
-
-	ViewOffset = PlayerViewOffset;
-
-	// Calculate the draw offset
-	if ( Holder.Controller == None )
-	{
-
-
-			PC.GetPlayerViewPoint(SpecViewLoc, SpecRotation);
-			DrawOffset = ViewOffset >> SpecRotation;
-			//DrawOffset += UTPawn(Holder).WeaponBob(BobDamping, JumpDamping);
-			FinalLocation = SpecViewLoc + DrawOffset;
-			SetLocation(FinalLocation);
-			SetBase(Holder);
-
-			// Add some rotation leading
-			//SpecRotation.Yaw = LagRot(SpecRotation.Yaw & 65535, LastRotation.Yaw & 65535, MaxYawLag, 0);
-			//SpecRotation.Pitch = LagRot(SpecRotation.Pitch & 65535, LastRotation.Pitch & 65535, MaxPitchLag, 1);
-			//LastRotUpdate = WorldInfo.TimeSeconds;
-			//LastRotation = SpecRotation;
-
-			if ( bIsWideScreen )
-			{
-				//SpecRotation += WidescreenRotationOffset;
-			}
-			SetRotation(SpecRotation);
-			return;
+		NewRotation = Holder.GetBaseAimRotation();
 	}
 	else
 	{
-
-		DrawOffset.Z = TPawn(Holder).GetEyeHeight();
-		//DrawOffset += TPawn(Holder).WeaponBob(BobDamping, JumpDamping);
-
-		if ( TPlayerController(Holder.Controller) != None )
-		{
-			DrawOffset += TPlayerController(Holder.Controller).ShakeOffset >> Holder.Controller.Rotation;
-		}
-
-		DrawOffset = DrawOffset + ( ViewOffset >> Holder.Controller.Rotation );
+		NewRotation = Holder.Controller.Rotation;
 	}
-
-	// Adjust it in the world
-	FinalLocation = Holder.Location + DrawOffset;
-	SetLocation(FinalLocation);
+	
+	// set location/rotation/base
+	SetLocation(DrawOffset);
+	SetRotation(NewRotation);
 	SetBase(Holder);
+}
 
-	NewRotation = (Holder.Controller == None) ? Holder.GetBaseAimRotation() : Holder.Controller.Rotation;
-
-	// Add some rotation leading
-	//if (Holder.Controller != None)
-	//{
-	//&nbsp;&nbsp; &nbsp;FinalRotation.Yaw = LagRot(NewRotation.Yaw & 65535, LastRotation.Yaw & 65535, MaxYawLag, 0);
-	//&nbsp;&nbsp; &nbsp;FinalRotation.Pitch = LagRot(NewRotation.Pitch & 65535, LastRotation.Pitch & 65535, MaxPitchLag, 1);
-	//&nbsp;&nbsp; &nbsp;FinalRotation.Roll = NewRotation.Roll;
-	//}
-	//else
-	//{
-	FinalRotation = NewRotation;
-	//}
-	//LastRotUpdate = WorldInfo.TimeSeconds;
-	//LastRotation = NewRotation;
-
-	if ( bIsWideScreen )
+/** overloaded: attach mesh */
+simulated function AttachWeaponTo(SkeletalMeshComponent SkelMesh, optional name SocketName)
+{
+	super.AttachWeaponTo(SkelMesh, SocketName);
+	
+	if((Mesh != none) && !Mesh.bAttached)
 	{
-		//FinalRotation += WidescreenRotationOffset;
-	}
-	SetRotation(FinalRotation);
-}
-
-/**
- * Returns true if we are currently zoomed
- */
-simulated function EZoomState GetZoomedState()
-{
-	local PlayerController PC;
-	PC = PlayerController(Instigator.Controller);
-	if ( PC != none && PC.GetFOVAngle() != PC.DefaultFOV )
-	{
-		if ( PC.GetFOVAngle() == PC.DesiredFOV )
-		{
-			return ZST_Zoomed;
-		}
-
-		return ( PC.GetFOVAngle() < PC.DesiredFOV ) ? ZST_ZoomingOut : ZST_ZoomingIn;
-	}
-	return ZST_NotZoomed;
-}
-
-simulated function RaiseWeapon()
-{
-    if(IsInState('Inactive'))
-    {
-        return;
-    }
-
-    if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
-    {
-        bAimingDelay = true;
-        return;
-    }
-
-    if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayerIdleAnimation');
-
-    if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
-
-    if(IsTimerActive('TimeWeaponLowering')) ClearTimer('TimWeaponLowering');
-
-    bAmingDelay = true;
-
-    if(IsPlayingAnim(ArmAimFireAnim))
-    {
-        SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayerIdleAnimation');
-    }
-    else if(IsPlayingAnim(ArmFireAnim))
-    {
-        SetTimer(GetAnimTimeLeft() + 0.01, false, 'TimeWeaponRaising');
-    }
-    else
-    {
-        TimeWeaponRaising();
-    }
-}
-
-simulated function LowerWeapon()
-{
-    if(IsInState('Inactive'))
-    {
-        return;
-    }
-
-    if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
-    {
-        bAmingDelay = true;
-    }
-
-    if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayerIdleAnimation');
-
-    if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
-
-    if(IsTimerActive('TimeWeaponLowering')) ClearTimer('TimWeaponLowering');
-
-    bAmingDelay = true;
-
-    if(IsPlayingAnim(ArmAimFireAnim))
-    {
-        SetTimer(GetAnimTimeLeft() + 0.01, falsse, 'TimeWeaponLowering');
-    }
-    else if(IsPlayingAnim(ArmFireAnim))
-    {
-        SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayIdleAnimation');
-    }
-    else
-    {
-        TimeWeaponLowering();
-    }
-}
-
-simulated function TimeWeaponRaising()
-{
-    local float AimTime;
-    local float TimeDiff;
-
-    if(IsPlayingAnim(ArmAimAnim))
-    {
-        TimeDiff = GetAnimTimeLeft();
-        AnimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false, , TimDiff);
-    }
-    else if(IsPlayingAnim(ArmAimFireAnim))
-    {
-        AnimTime = GetAnimTimeLeft() + 0.01;
-    }
-    else
-    {
-        AnimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false);
-    }
-
-    bIsAiming = true;
-    ArmIdleAnims[0] = ArmAimIdleAnim;
-    ArmFireAnim = ArmAimFireAnim;
-    ArmViewOffset = IronsightViewOffset;
-    SetFOV(AimingFOV);
-    SetMeshFOV(AimingMeshFOV);
-    SetTimer(AimTime, false, 'PlayIdleAnimation');
-}
-
-simulated function TimeWeaponLowering()
-{
-    local float AimTime;
-    local float TimeDiff;
-
-    if(IsPlayingAnim(ArmAimAnim))
-    {
-        TimeDiff = GetAnimTimeLeft();
-        AnimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false, , TimDiff);
-    }
-    else if(IsPlayingAnim(ArmAimFireAnim))
-    {
-        AnimTime = GetAnimTimeLeft() + 0.01;
-    }
-    else
-    {
-        AnimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false);
-    }
-
-    bIsAiming = false;
-    ArmIdleAnims[0] = default.ArmIdleAnims[0];
-    ArmFireAnim = default.ArmFirAnim;
-    ArmViewOffset = default.ArmViewOffset;
-    SetFOV();
-    SetMeshFOV(DefaultMeshFOV);
-    SetTimer(Abs(AimTime), false, 'PlayIdleAnimation');
-}
-
-simulated function SetFOV(optional float NewFOV)
-{
-    local TPlayerController PC;
-
-    if((Instigator != none) && Instigator.Controller != none)
-    {
-        PC = TPlayerController(Instigator.Controller);
-        if(NewFOV > 0.0)
-        {
-            PC.StartZoomNonlinear(NewFOV, 10.0f);
-        }
-        else
-        {
-            PC.EndZoomNonlinear(10.0f);
-        }
-    }
-}
-
-simulated function SetMeshFOV(float NewFOV, optional bool bForceFOV)
-{
-    if((Mesh != none) && Mesh.bAttached)
-    {
-        DesiredMeshFOV = NewFOV;
-    }
-}
-
-simulated function AdjustMeshFOV(float DeltaTime)
-{
-    if((Mesh != none) && Mesh.bAttached)
-    {
-        if(CurrentMeshFOV != DesiredMeshFOV)
-        {
-            CurrentMeshFOV = FInterpTo(CurrentMeshFOV, DesiredMeshFOV, DeltaTime, 10.0f);
-            UDKSkeletalMeshComponent(Mesh).SetFOV(CurrentMeshFOV);
-
-            if((Firearm != none) && Firearm.Mesh != none)
-            {
-                UDKSkeletalMeshComponent(Firearm.Mesh).SetFOV(CurrentMeshFOV);
-            }
-        }
-    }
-}
-
-simulated event Tick(float DeltaTime)
-{
-    super.Tick(DeltaTime);
-
-    AdjustMeshFOV(DeltaTime);
-}
-
-simulated function PlayWeaponAnimation(name Sequence, float fDesiredDuration, optional bool bLoop, optional SkeletalMeshComponent SkelMesh)
-{
-	if (Mesh != None && Mesh.bAttached)
-	{
-		Super.PlayWeaponAnimation(Sequence, fDesiredDuration, bLoop, SkelMesh);
+		AttachComponent(Mesh);
+		AttachFirearm();
+		SetHidden(false);
 	}
 }
 
-simulated state WeaponEquipping
-{
-	simulated event BeginState(Name PreviousStateName)
-	{
-		PrintScreenDebug("Weapon Equipping");
-		AttachWeaponTo(Instigator.Mesh);
-		Super.BeginState(PreviousStateName);
-	}
-}
-
-simulated state Active
-{
-	simulated event BeginState(Name PreviousStateName)
-	{
-		PrintScreenDebug("Active");
-		Super.BeginState(PreviousStateName);
-	}
-}
-
-simulated state WeaponFiring
-{
-	simulated event BeginState(Name PreviousStateName)
-	{
-		PrintScreenDebug("Firing");
-		Super.BeginState(PreviousStateName);
-	}
-
-	/**
-	* We override BeginFire() so that we can check for zooming and/or empty weapons
-	*/
-
-	simulated function BeginFire( Byte FireModeNum )
-	{
-		// No Ammo, then do a quick exit.
-		if( !HasAmmo(FireModeNum) )
-		{
-			WeaponEmpty();
-			return;
-		}
-		Global.BeginFire(FireModeNum);
-	}
-}
-
-simulated function AttachMuzzleFlash()
-{
-	local SkeletalMeshComponent SKMesh;
-
-	// Attach the Muzzle Flash
-	bMuzzleFlashAttached = true;
-	SKMesh = SkeletalMeshComponent(Mesh);
-	if (  SKMesh != none )
-	{
-		if ( (MuzzleFlashPSCTemplate != none) || (MuzzleFlashAltPSCTemplate != none) )
-		{
-			MuzzleFlashPSC = new(Outer) class'UTParticleSystemComponent';
-			MuzzleFlashPSC.bAutoActivate = false;
-			MuzzleFlashPSC.SetDepthPriorityGroup(SDPG_Foreground);
-			MuzzleFlashPSC.SetFOV(UDKSkeletalMeshComponent(SKMesh).FOV);
-			SKMesh.AttachComponentToSocket(MuzzleFlashPSC, MuzzleFlashSocket);
-		}
-	}
-}
-
-simulated function DetachMuzzleFlash()
-{
-	local SkeletalMeshComponent SKMesh;
-
-	bMuzzleFlashAttached = false;
-	SKMesh = SkeletalMeshComponent(Mesh);
-	if (  SKMesh != none )
-	{
-		if (MuzzleFlashPSC != none)
-			SKMesh.DetachComponent( MuzzleFlashPSC );
-	}
-	MuzzleFlashPSC = None;
-}
-
-simulated event CauseMuzzleFlashLight()
-{
-	// don't do muzzle flashes when running too slow, except on mobile, where we need it to show off dynamic lighting
-	if ( WorldInfo.bDropDetail && !WorldInfo.IsConsoleBuild(CONSOLE_Mobile) )
-	{
-		return;
-	}
-
-	if ( MuzzleFlashLight != None )
-	{
-		MuzzleFlashLight.ResetLight();
-	}
-	else if ( MuzzleFlashLightClass != None )
-	{
-		MuzzleFlashLight = new(Outer) MuzzleFlashLightClass;
-		SkeletalMeshComponent(Mesh).AttachComponentToSocket(MuzzleFlashLight,MuzzleFlashSocket);
-	}
-}
-
-simulated function EWeaponHand GetHand()
-{
-	return HAND_Right;
-}
-
-simulated event CauseMuzzleFlash()
+/** attach firearm to arms */
+simulated function AttachFirearm()
 {
 	local TPawn P;
-	local ParticleSystem MuzzleTemplate;
-
-	if ( WorldInfo.NetMode != NM_Client )
+	
+	if(Instigator != none)
 	{
 		P = TPawn(Instigator);
-		if ( (P == None) || !P.bUpdateEyeHeight )
+		
+		if(FirearmClass != none)
 		{
-			return;
-		}
-	}
-
-	CauseMuzzleFlashLight();
-
-	if (GetHand() != HAND_Hidden || (bShowAltMuzzlePSCWhenWeaponHidden && Instigator != None && Instigator.FiringMode == 1 && MuzzleFlashAltPSCTemplate != None))
-	{
-		if ( !bMuzzleFlashAttached )
-		{
-			AttachMuzzleFlash();
-		}
-		if (MuzzleFlashPSC != None)
-		{
-			if (!bMuzzleFlashPSCLoops || (!MuzzleFlashPSC.bIsActive || MuzzleFlashPSC.bWasDeactivated))
+			Firearm = Spawn(FirearmClass);
+			
+			if(Firearm != none)
 			{
-				if (Instigator != None && Instigator.FiringMode == 1 && MuzzleFlashAltPSCTemplate != None)
-				{
-					MuzzleTemplate = MuzzleFlashAltPSCTemplate;
-
-					// Option to not hide alt muzzle
-					MuzzleFlashPSC.SetIgnoreOwnerHidden(bShowAltMuzzlePSCWhenWeaponHidden);
-				}
-				else if (MuzzleFlashPSCTemplate != None)
-				{
-					MuzzleTemplate = MuzzleFlashPSCTemplate;
-				}
-				if (MuzzleTemplate != MuzzleFlashPSC.Template)
-				{
-					MuzzleFlashPSC.SetTemplate(MuzzleTemplate);
-				}
-				SetMuzzleFlashParams(MuzzleFlashPSC);
-				MuzzleFlashPSC.ActivateSystem();
+				Firearm.AttachTo(self, P);
+				Firearm.ChangeVisibility(false);
 			}
 		}
-
-		// Set when to turn it off.
-		SetTimer(MuzzleFlashDuration,false,'MuzzleFlashTimer');
 	}
 }
 
-exec function Reload()
+/** overloaded: detach arms */
+simulated function DetachWeapon()
 {
-	if(ClipCount < MaxClipCount)
+	super.DetachWeapon();
+	
+	if((Mesh != none) && Mesh.bAttached)
 	{
-		if(AmmoCount > (MaxClipCount - ClipCount))
+		DetachFirearm();
+		DetachComponent(Mesh);
+	}
+	
+	SetBase(none);
+	SetHidden(true);
+}
+
+/** detach firearm to arms */
+simulated function DetachFirearm()
+{
+	if(Firearm != none)
+	{
+		Firearm.DetachFrom();
+	}
+}
+
+/** time weapon equiping */
+simulated function TimeWeaponEquipping()
+{
+	local float EquipAnimTime;
+	
+	// attach weapon
+	if(Instigator !=none)
+	{
+		// attach arm mesh
+		AttachWeaponTo(Instigator.Mesh);
+		
+		// play arm equip animation
+		if(ArmEquipAnim != '')
 		{
-			AmmoCount = AmmoCount - (MaxClipCount - ClipCount);
-			ClipCount = MaxClipCount;
+			// play animation and return anim length for equip timer
+			EquipAnimTime = PlayWeaponAnim(ArmEquipAnim, ArmEquipAnimRate, false);
+			SetTimer(EquipAnimTime, false, 'WeaponEquipped');
+		}
+	}
+}
+
+/** timed weapon reloading */
+simulated function TimeWeaponReload()
+{
+	local float ReloadAnimTime;
+	
+	// make sure this timer isn't already active
+	if(!IsTimerActive('Reload'))
+	{
+		// play reload animation and get the animation length
+		ReloadAnimTime = PlayWeaponAnim(ArmReloadAnim, ArmReloadAnimRate, false);
+		// play reload animation on the weapon mesh as well
+		PlayWeaponAnim(ArmReloadAnim, ArmReloadAnimRate, false, Firearm.Mesh);
+		// set the timer based on the anim length and actually reload
+		SetTimer(ReloadAnimTime, false, 'Reload');
+	}
+}
+
+/** is weapon reloading */
+simulated function bool IsReloading()
+{
+	return false;
+}
+
+/** reload */
+simulated function Reload()
+{
+	if(CanReload())
+	{
+		if(IsTimerActive('Reload'))
+		{
+			ClearTimer('Reload');
+		}
+	}
+}
+
+/** overloaded: play fire effects */
+simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation)
+{
+	if(ArmFireAnim != '')
+	{
+		PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false);
+		PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false, Firearm.mesh);
+	}
+}
+
+/** state: active */
+simulated state Active
+{
+	/** begin state */
+	simulated function beginState(name PrevState)
+	{
+		// playing any animations
+		if(IsPlayingAnims())
+		{
+			// already playing an animation so get the time left and set the timer
+			SetTimer(GetAnimTimeLeft(), false, 'PlayIdleAnimation');
 		}
 		else
 		{
-			ClipCount = ClipCount + AmmoCount;
-			AmmoCount = 0;
+			// not playing an anim so play the idle anim
+			PlayIdleAnimation();
 		}
+		
+		super.BeginState(PrevState);
 	}
-}
-
-simulated function SetMuzzleFlashParams(ParticleSystemComponent PSC)
-{
-	PSC.SetColorParameter('MuzzleFlashColor', MuzzleFlashColor);
-	PSC.SetVectorParameter('MFlashScale',Vect(0.5,0.5,0.5));
-}
-
-simulated function vector GetEffectLocation()
-{
-	local vector SocketLocation;
-
-	if (GetHand() == HAND_Hidden)
+	
+	/** end state */
+	simulated function EndState(name NextState)
 	{
-		SocketLocation = Instigator.Location;
-	}
-	else if (SkeletalMeshComponent(Mesh) != None && EffectSockets[CurrentFireMode] != '')
-	{
-		if (!SkeletalMeshComponent(Mesh).GetSocketWorldLocationAndrotation(EffectSockets[CurrentFireMode], SocketLocation))
+		if(IsTimerActive('PlayIdleAnimation'))
 		{
-			SocketLocation = Location;
+			ClearTimer('PlayIdleAnimation');
+		}
+		
+		super.EndState(NextState);
+	}
+	
+	/** play idle animation */
+	simulated function PlayIdleAnimation()
+	{
+		local int i;
+		
+		if(WorldInfo.NetMode != NM_DedicatedServer && ArmIdleAnims.Length > 0)
+		{
+			i = Rand(ArmIdleAnims.Length);
+			PlayWeaponAnim(ArmIdleAnims[i], ArmIdleAnimRate, true);
 		}
 	}
-	else if (Mesh != None)
-	{
-		SocketLocation = Mesh.Bounds.Origin + (vect(45,0,0) >> Rotation);
-	}
-	else
-	{
-		SocketLocation = Location;
-	}
-
- 	return SocketLocation;
 }
 
-function int GetInventorySlot()
+/** state: weapon reloading */
+simulated state WeaponReloading
 {
-	return InventorySlot;
-}
-
-function int GetWeaponSubClass()
-{
-	return WeaponSubClass;
-}
-
-/**
- * Detach weapon from skeletal mesh
- *
- * @param	SkeletalMeshComponent weapon is attached to.
- */
-simulated function DetachWeapon()
-{
-	local TPawn P;
-
-	DetachComponent( Mesh );
-	if (OverlayMesh != None)
+	/** begin state */
+	simulated function BeginState(name PrevState)
 	{
-		DetachComponent(OverlayMesh);
-	}
-
-	SetSkin(None);
-
-	P = TPawn(Instigator);
-	/*if (P != None)
-	{
-		if (Role == ROLE_Authority && P.CurrentWeaponAttachmentClass == AttachmentClass)
+		// playing anims except looping anims (will be our idle anim)
+		if(IsPlayingAnims(, true))
 		{
-			P.CurrentWeaponAttachmentClass = None;
-			if (Instigator.IsLocallyControlled())
-			{
-				P.WeaponAttachmentChanged();
-			}
+			SetTimer(GetAnimTimeLeft(), false, 'TimeWeaponReload');
 		}
-	}*/
-
-	SetBase(None);
-	SetHidden(True);
-	DetachMuzzleFlash();
-	Mesh.SetLightEnvironment(None);
-}
-
-/**
- * Material control
- *
- * @Param 	NewMaterial		The new material to apply or none to clear it
- */
-simulated function SetSkin(Material NewMaterial)
-{
-	local int i,Cnt;
-
-	if ( NewMaterial == None )
-	{
-		// Clear the materials
-		if ( default.Mesh.Materials.Length > 0 )
+		else
 		{
-			Cnt = Default.Mesh.Materials.Length;
-			for (i=0;i<Cnt;i++)
-			{
-				Mesh.SetMaterial( i, Default.Mesh.GetMaterial(i) );
-			}
-		}
-		else if (Mesh.Materials.Length > 0)
-		{
-			Cnt = Mesh.Materials.Length;
-			for ( i=0; i < Cnt; i++ )
-			{
-				Mesh.SetMaterial(i, none);
-			}
+			TimeWeaponReload();
 		}
 	}
-	else
+	
+	/** begin fire */
+	simulated function BeginFire(byte FireModeNum)
 	{
-		// Set new material
-		if ( default.Mesh.Materials.Length > 0 || Mesh.GetNumElements() > 0 )
+		// don't allow firing
+		return;
+	}
+	
+	/** end state */
+	simulated function EndState(name NextState)
+	{
+		// clear our timers
+		ClearTimer('TimeWeaponReload');
+		ClearTimer('Reload');
+	}
+	
+	/** is weapon reloading */
+	simulated function bool IsReloading()
+	{
+		return true;
+	}
+	
+	/** reload */
+	simulated function Reload()
+	{
+		local int Ammo;
+		
+		if(MagAmmo < 1)
 		{
-			Cnt = default.Mesh.Materials.Length > 0 ? default.Mesh.Materials.Length : Mesh.GetNumElements();
-			for ( i=0; i < Cnt; i++ )
-			{
-				Mesh.SetMaterial(i, NewMaterial);
-			}
+			Ammo = Min(MaxMagAmmo, AmmoCount);
+			AddMagAmmo(Ammo);
+			AddStorageAmmo(-Ammo);
 		}
+		else
+		{
+			Ammo = Abs(MaxMagAmmo - MagAmmo);
+			Ammo = Min(AmmoCount, Ammo);
+			AddMagAmmo(Ammo);
+			AddStorageAmmo(-Ammo);
+		}
+		
+		// return to acctive state
+		GotoState('Active');
 	}
 }
 
 defaultproperties
 {
-	Begin Object Name Class=UDKSkeletalMeshComponent Name=FirstPersonMesh
-		DepthPriorityGroup=SDPG_Foreground
-		bOnlyOwnerSee=true
-		bOverrideAttachmentOwnerVisibility=true
-		CastShadow=false
-		bAllowAmbientOcclusion=false
-	End Object
-	Mesh=FirstPersonMesh
+	// anim sequence
+	begin object class=AnimNodeSequence name=MeshSequenceA
+		bCauseActorAnimEnd = true
+	end object
 
-	Begin Object Name Class=SkeletalMeshComponent Name=PickupMesh
-		bOnlyOwnerSee=false
-		CastShadow=false
-		bForceDirectLightMap=true
-		bCastDynamicShadow=false
-		CollideActors=false
-		BlockRigidBody=false
-		bUseAsOccluder=false
-		MaxDrawDistance=6000
-		bForceRefPose=1
-		bUpdateSkelWhenNotRendered=false
-		bIgnoreControllersWhenNotRendered=true
-		bAcceptsStaticDecals=FALSE
-		bAcceptsDynamicDecals=FALSE
-		bAllowAmbientOcclusion=false
-	End Object
-	DroppedPickupMesh=PickupMesh
-	PickupFactoryMesh=PickupMesh
-
-	MessageClass=class'UTPickupMessage'
-	DroppedPickupClass=class'UTDroppedPickup'
-
-	FiringStatesArray(0)=WeaponFiring
-	FiringStatesArray(1)=WeaponFiring
-
-	WeaponFireTypes(0)=EWFT_InstantHit
-	WeaponFireTypes(1)=EWFT_InstantHit
-
-	WeaponProjectiles(0)=none
-	WeaponProjectiles(1)=none
-
-	FireInterval(0)=+0.5
-	FireInterval(1)=+0.5
-
-	Spread(0)=0.0
-	Spread(1)=0.0
-
-	ShotCost(0)=1
-	ShotCost(1)=1 
-
-	AmmoCount=10
-	MaxAmmoCount=10
+	// arms mesh
+	begin object class=UDKSkeletalMeshComponent name=ArmsMeshComp
+		SkeletalMesh = SkeletalMesh'T.Mesh.Char_Arms'
+		AnimSets(0) = AnimSet'T.Anims.Char_Arm_Anims'
+		DepthPriorityGroup = SDPG_Foreground
+		bOnlyOwnerSee = true
+		bOverrideAttachmentOwnerVisibility = true
+		CastShadow = false;
+		FOV = 60.0f
+		Animations = MeshSequenceA
+		bPerBoneMotionBlur = true
+		bAcceptsStaticDecals = false
+		bAcceptsDynamicDecals = false
+		bUpdateSkelWhenNotRendered = false
+		bComponentUseFixedSkelBounds = true
+	end object
+	Mesh = ArmsMeshComp
 	
-	ClipCount=10
-	MaxClipCount=10
-
-	InstantHitDamage(0)=0.0
-	InstantHitDamage(1)=0.0
-	InstantHitMomentum(0)=0.0
-	InstantHitMomentum(1)=0.0
-	InstantHitDamageTypes(0)=class'DamageType'
-	InstantHitDamageTypes(1)=class'DamageType'
-	WeaponRange=22000
-
-	EffectSockets(0)=MuzzleFlashSocket
-	EffectSockets(1)=MuzzleFlashSocket
+	// mesh settings
+	ArmViewOffset = (X=43.0)
 	
-	MuzzleFlashDuration=0.33
+	// -------------------------------------- ANIMATIONS
+	ArmIdleAnims(0) = 1p_Idle
+	ArmEquipAnim = 1p_Equip
+	ArmFireAnim = 1p_Fire
+	ArmReloadAnim = 1p_Reload
 	
-	WeaponFireSnd(0)=none
-	WeaponFireSnd(1)=none
+	// -------------------------------------- ANIMATION RATES
+	ArmIdleAnimRate = 1.0
+	ArmEquipAnimRate = 1.0
+	ArmFireAnimRate = 1.0
+	ArmReloadAnimRate = 1.0
 	
-	MuzzleFlashSocket=MuzzleFlashSocket
-
-	ShouldFireOnRelease(0)=0
-	ShouldFireOnRelease(1)=0
-
-	DefaultAnimSpeed=0.9
-
-	EquipTime=+0.45
-	PutDownTime=+0.33
-	
-    IronsightViewOffset = (X=40.0)
-    DefaultMeshFOV = 60.0f
-    CurrentMeshFOV = 60.0f
-    DesiredMeshFOV = 60.0f
-    AimingMeshFOV = 30.0f
-
-    ArmAimAnim = 1p_ToAim
-    ArmAimIdleAnim = 1p_AimIdle
-    ArmAimFireAnim = 1p_AimFire
-
-    ArmAimAnimRate = 1.0
-    ArmAimIdleAnimRate = 1.0
-    ArmAimFireAnimRate = 1.0
-
-    AimingFOV = 60.0f
-
+	// -------------------------------------- WEAPON SETTINGS
+	bInstantHit = true
+	FiringStatesArray(0) = WeaponFiring
+	WeaponFireTypes(0) = EWFT_InstantHit
+	ShouldFireOnRelease(0) = 0
+	FireInterval(0) = 0.1
+	Spread(0) = 0.05
+	InstantHitDamage(0) = 10.0
+	InstantHitMomentum(0) = 1.0
+	InstantHitDamageTypes(0) = class'DamageType'
 	InventorySlot = 0;
 	WeaponSubClass = 0;
+	
+	// -------------------------------------- SOCKETS
+	WeaponSocket = WeaponSocket
+	
+	// -------------------------------------- AMMUNITION
+	MagAmmo = 15
+	MaxMagAmmo = 15
+	AmmoCount = 15
+	MaxAmmoCount = 99
+	ShotCost(0) = 1
+	ShotCost(1) = 0
 }
