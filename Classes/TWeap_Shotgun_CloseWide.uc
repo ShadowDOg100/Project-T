@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_Shotgun_CloseWide'
+	
+	InventorySlot = 1;
+	WeaponSubClass = 2;
 }

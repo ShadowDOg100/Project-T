@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_Assaultrifle_AK47'
+	
+	InventorySlot = 2;
+	WeaponSubClass = 0;
 }

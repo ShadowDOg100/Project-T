@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_Assaultrifle_Famas'
+	
+	InventorySlot = 2;
+	WeaponSubClass = 2;
 }

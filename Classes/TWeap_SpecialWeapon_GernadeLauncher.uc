@@ -6,5 +6,8 @@ defaultproperties
 	ArmViewOffset = (X=43.0)
 	
 	// firearm
-	FirearmClass = class'TFirearm_SpecialWeapon_GernadeLauncher
+	FirearmClass = class'TFirearm_SpecialWeapon_GernadeLauncher'
+	
+	InventorySlot = 3;
+	WeaponSubClass = 2;
 }

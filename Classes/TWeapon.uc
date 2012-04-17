@@ -153,6 +153,12 @@ simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 	return (MagAmmo == Amount);
 }
 
+/** overloaded: consume ammo */
+function ConsumeAmmo( byte FireModeNum )
+{
+	AddMagAmmo(-ShotCost[FireModeNum]);
+}
+
 /** overloaded: should refire */
 simulated function bool ShouldRefire()
 {
@@ -682,7 +688,7 @@ defaultproperties
 	MagAmmo = 15
 	MaxMagAmmo = 15
 	AmmoCount = 15
-	MaxAmmoCount = 99
+	MaxAmmoCount = 15
 	ShotCost(0) = 1
 	ShotCost(1) = 0
 }

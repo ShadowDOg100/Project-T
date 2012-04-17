@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_SpecialWeapon_RocketLauncher'
+	
+	InventorySlot = 3;
+	WeaponSubClass = 1;
 }

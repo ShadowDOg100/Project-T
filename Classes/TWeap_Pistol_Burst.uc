@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_Pistol_Burst'
+	
+	InventorySlot = 0;
+	WeaponSubClass = 1;
 }

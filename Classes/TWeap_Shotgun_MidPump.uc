@@ -7,4 +7,7 @@ defaultproperties
 	
 	// firearm
 	FirearmClass = class'TFirearm_Shotgun_MidPump'
+	
+	InventorySlot = 1;
+	WeaponSubClass = 0;
 }
