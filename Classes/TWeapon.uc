@@ -519,7 +519,7 @@ simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation
 simulated state Active
 {
 	/** begin state */
-	simulated function beginState(name PrevState)
+	simulated function BeginState(name PrevState)
 	{
 		// playing any animations
 		if(IsPlayingAnims())

@@ -14,4 +14,5 @@ DefaultProperties
 	
 	PlayerControllerClass = class'TGame.TPlayerController'
 	DefaultPawnClass = class'TGame.TPawn'
+	HUDType=class'TGame.TGFxHUDWrapper'
 }
