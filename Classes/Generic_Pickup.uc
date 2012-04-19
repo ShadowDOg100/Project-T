@@ -60,7 +60,7 @@ DefaultProperties
 	Components.Add(MyLightEnvironment)
 
 	Begin Object Class=SkeletalMeshComponent Name=PickupMesh
-		SkeletalMesh=SkeletalMesh'MyWeapons.SK_WP_Generic'
+		SkeletalMesh=SkeletalMesh'MyPackage.Glock21_LowRes_SkMesh'
 		LightEnvironment=MyLightEnvironment
 	End Object
 

@@ -159,17 +159,6 @@ function ConsumeAmmo( byte FireModeNum )
 	AddMagAmmo(-ShotCost[FireModeNum]);
 }
 
-/** overloaded: should refire */
-simulated function bool ShouldRefire()
-{
-	// if out of magaine ammo
-	if(!HasAmmo(CurrentFireMode)) return false;
-	
-	// force stop fire for single shots at a time
-	StopFire(CurrentFireMode);
-	return false;
-}
-
 /** reload weapon */
 simulated function ReloadWeapon()
 {
@@ -637,8 +626,6 @@ defaultproperties
 
 	// arms mesh
 	begin object class=UDKSkeletalMeshComponent name=ArmsMeshComp
-		SkeletalMesh = SkeletalMesh'T.Mesh.Char_Arms'
-		AnimSets(0) = AnimSet'T.Anims.Char_Arm_Anims'
 		DepthPriorityGroup = SDPG_Foreground
 		bOnlyOwnerSee = true
 		bOverrideAttachmentOwnerVisibility = true

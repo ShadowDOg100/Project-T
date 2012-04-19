@@ -4,7 +4,7 @@ defaultproperties
 {
 	// firearm mesh
 	begin object name=FirearmMesh
-		SkeletalMesh = SkeletalMesh'T.Mesh.SK_WP_Generic'
-		AnimSets(0) = AnimSet'T.Anims.Generic_Anims'
+		SkeletalMesh = SkeletalMesh'MyPackage.Glock21_LowRes_SkMesh'
+		AnimSets(0) = AnimSet'MyPackage.1p_GUN_Glock_Anims'
 	end object
 }
