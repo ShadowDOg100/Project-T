@@ -18,6 +18,22 @@ var bool bCurrentCamAnimAffectsFOV;
 
 var UTUIDataStore_StringAliasBindingsMap BoundEventsStringDataStore;
 
+/** exec: raise weapon to ironsight */
+simulated exec function RaiseWeapon()
+{
+	if((Pawn == none) || Pawn.Weapon == none) return;
+	
+	TWeapon(Pawn.Weapon).RaiseWeapon();
+}
+
+/** exec: lower weapon from ironsight */
+simulated exec function LowerWeapon()
+{
+	if((Pawn == none) || Pawn.Weapon == none) return;
+	
+	TWeapon(Pawn.Weapon).LowerWeapon();
+}
+
 /** switch weapon */
 exec function SwitchWeapon(byte T)
 {

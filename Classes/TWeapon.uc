@@ -3,6 +3,26 @@ class TWeapon extends UDKWeapon
 	config(Weapon)
 	abstract;
 
+// -------------------------------------- RECOIL
+/** recoil */
+var(Recoil) float Recoil;
+/** max recoil */
+var(Recoil) float MaxRecoil;
+/** aiming recoil */
+var(Recoil) float AimRecoil;
+/** recoil offset to use */
+var rotator RecoilOffset;
+/** recoil interp speed */
+var(Recoil) float RecoilInterpSpeed;
+/** recoil decline offset to use */
+var rotator RecoilDecline;
+/** decline percentage */
+var(Recoil) float RecoilDeclinePct;
+/** recoil decline speed */
+var(Recoil) float RecoilDeclineSpeed;
+/** total recoil caches */
+var rotator TotalRecoil;
+	
 // -------------------------------------- INVENTORY
 /** inventory slot */
 var int InventorySlot;
@@ -38,6 +58,12 @@ var(Animations) name ArmEquipAnim;
 var(Animations) name ArmFireAnim;
 /** arm reload animation */
 var(Animations) name ArmReloadAnim;
+/** arm to arm animatoin */
+var(Animations) name ArmAimAnim;
+/** arm aim idl animation */
+var(Animations) name ArmAimIdleAnim;
+/** arm aim fire animation */
+var(Animations) name ArmAimFireAnim;
 
 // -------------------------------------- ANIMATION RATES
 /** arm idle anim rate */
@@ -48,15 +74,141 @@ var float ArmEquipAnimRate;
 var float ArmFireAnimRate;
 /** arm reload anim rate */
 var float ArmReloadAnimRate;
+/** arm to aim anim rate */
+var float ArmAimAnimRate;
+/** arm aim idle anim rate */
+var float ArmAimIdleAnimRate;
+/** ar aim fire anim rate */
+var float ArmAimFireAnimRate;
+
+// -------------------------------------- IRONSIGHT
+/** is aiming */
+var bool bIsAiming;
+/** aiming FOV */
+var() float AimingFOV;
+/** aiming delay */
+var bool bAimingDelay;
 
 /** arms mesh vieww offset */
 var() vector ArmViewOffset;
+/** arms view offset during ironsight */
+var() vector IronsightViewOffset;
+/** aiming mesh FOV */
+var() float AimingMeshFOV;
+/** default mesh FOV */
+var() float DefaultMeshFOV;
+/** private: current mesh FOV */
+var float CurrentMeshFOV;
+/** private: mesh desired FOV */
+var float DesiredMeshFOV;
 
 /** replication */
 replication
 {
 	if(bNetOwner)
 		MagAmmo;
+}
+
+/** process view rotation; called by pawn */
+/** process view rotation; called by Pawn */
+simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
+{
+	local rotator DeltaRecoil;
+	local float DeltaPitch, DeltaYaw;
+	
+	// perform recoil
+	if(RecoilOffset != rot(0,0,0))
+	{
+		// interp recoil based on recoil offset
+		DeltaRecoil.Pitch = RecoilOffset.Pitch - FInterpTo(RecoilOffset.Pitch, 0, DeltaTime, RecoilInterpSpeed);
+		DeltaRecoil.Yaw = RecoilOffset.Yaw - FInterpTo(RecoilOffset.Yaw, 0, DeltaTime, RecoilInterpSpeed);
+		
+		// cache total recoil
+		TotalRecoil.Pitch += DeltaRecoil.Pitch;
+		
+		// recoil is greater than our max recoil
+		if(TotalRecoil.Pitch > MaxRecoil)
+		{
+			// still performing recoil
+			if(DeltaRecoil.Pitch > 0)
+			{
+				// reduce offset as normal
+				RecoilOffset -= DeltaRecoil;
+				// reduce recoil but don't stop
+				out_DeltaRot.Pitch += 1;
+				out_DeltaRot.Yaw += DeltaRecoil.Yaw;
+			}
+		}
+		// normal recoil
+		else
+		{
+			RecoilDecline += DeltaRecoil;
+			RecoilOffset -= DeltaRecoil;
+			out_DeltaRot += DeltaRecoil;
+		}
+	
+		// finished recoil
+		if(DeltaRecoil == rot(0,0,0)) RecoilOffset = rot(0,0,0);	
+	}
+	else
+	{
+		// recoil recovery
+		if(RecoilDecline != rot(0,0,0))
+		{
+			// revert total recoil cache
+			TotalRecoil = rot(0,0,0);
+			
+			// interp recoil recovery based on recoil decline
+			DeltaPitch = RecoilDecline.Pitch - FInterpTo(RecoilDecline.Pitch, 0, DeltaTime, RecoilDeclineSpeed);
+			DeltaYaw = RecoilDecline.Yaw - FInterpTo(RecoilDecline.Yaw, 0, DeltaTime, RecoilDeclineSpeed);
+			
+			out_DeltaRot.Pitch -= DeltaPitch * RecoilDeclinePct;
+			out_DeltaRot.Yaw -= DeltaYaw * RecoilDeclinePct;
+
+			RecoilDecline.Pitch -= DeltaPitch;
+			RecoilDecline.Yaw -= DeltaYaw;
+			
+			// turn of recoil recovery if low enough
+			if(Abs(DeltaPitch) < 1.0)
+			{
+				RecoilDecline = rot(0,0,0);
+			}
+		}
+	}
+	
+	// adjust mesh field of view
+	AdjustMeshFOV(DeltaTime);
+}
+
+/** overloaded: fire ammunition; called by WeaponFireing state */
+simulated function FireAmmunition()
+{
+	super.FireAmmunition();
+	
+	// recoil
+	SetWeaponRecoil(GetWeaponRecoil());
+}
+
+/** set recoil offset */
+simulated function SetWeaponRecoil(int PitchRecoil)
+{
+	local int YawRecoil;
+	YawRecoil = (0.5 - FRand()) * PitchRecoil;
+	RecoilOffset.Pitch += PitchRecoil;
+	RecoilOffset.Yaw += YawRecoil;
+}
+
+/** get weapon recoil */
+simulated function int GetWeaponRecoil()
+{
+	if(bIsAiming)
+	{
+		return AimRecoil;
+	}
+	else
+	{
+		return Recoil;
+	}
 }
 
 /** get get weapon sub class */
@@ -153,6 +305,17 @@ simulated function bool HasAmmo(byte FireModeNum, optional int Amount)
 	return (MagAmmo == Amount);
 }
 
+/** overloaded: should refire */
+simulated function bool ShouldRefire()
+{
+	// if out of magazine ammo
+	if(!HasAmmo(CurrentFireMode)) return false;
+	
+	// force stop fire single shots at a time
+	StopFire(CurrentFireMode);
+	return false;
+}
+
 /** overloaded: consume ammo */
 function ConsumeAmmo( byte FireModeNum )
 {
@@ -174,12 +337,52 @@ simulated function ReloadWeapon()
 		ServerReloadWeapon();
 	}
 	
+	// clear idle anim timer if active
+	if(IsTimerActive('PlayIdleAnimation'))
+	{
+		ClearTimer('PlayIdleAnimation');
+	}
+	
 	// if we can reload
 	if(CanReload())
 	{
-		// begin reloading
-		GotoState('WeaponReloading');
+		// clear weapon raising if active
+		if(IsTimerActive('TimerWeaponRaising')) ClearTimer('TimerWeaponRaising');
+		
+		// clear weapon lowering if active
+		if(IsTimerActive('TimeWeaponLowering')) ClearTimer('TimeWeaponLowering');
+		
+		// playing fire anim so wait until the animation has finished
+		// exit and come back to this function so below logic is performed at the right time
+		if(IsPlayingAnim(ArmFireAnim))
+		{
+			SetTimer(GetAnimTimeLeft() + 0.01, false, 'ReloadWeapon');
+			return;
+		}
+		
+		// currently aiming so lower weapon before reloading
+		if(bIsAiming)
+		{
+			TimeWeaponLowering();
+		}
+		
+		// playing aim animatino so wait until the animation has finished
+		if(IsPlayingAnim(ArmAimAnim))
+		{
+			SetTimer(GetANimTimeLeft() + 0.01, false, 'TimeReload');
+		}
+		else
+		{
+			// safe to continue
+			TimeReload();
+		}
 	}
+}
+
+/** timer: delayed time reloading */
+simulated function TimeReload()
+{
+	GotoState('WeaponReloading');
 }
 
 /** client to server: reload weapon */
@@ -500,13 +703,242 @@ simulated function Reload()
 	}
 }
 
+/** ironsight aiming: raise weapon*/
+simulated function RaiseWeapon()
+{
+	// if inactice then just exit
+	if(IsInState('Inactive'))
+	{
+		return;
+	}
+	
+	// if reloading at all then delay aiming and exit
+	if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
+	{
+		bAimingDelay = true;
+		return;
+	}
+	
+	// clear idle if active
+	if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayIdleAnimation');
+	
+	// clear raising if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
+	
+	// clear lowering if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponLowering');
+	
+	// enable aiming delay, used in various checks
+	bAimingDelay = true;
+	
+	// playing aim fire so just play idle after animation is finished
+	if(IsPlayingAnim(ArmAimFireAnim))
+	{
+		SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayIdleAnimation');
+	}
+	// playing normal fire so continue after the animation is finished
+	else if(IsPlayingAnim(ArmFireAnim))
+	{
+		SetTimer(GetAnimTimeLeft() + 0.01, false, 'TimeWeaponRaising');
+	}
+	// safe to just continue
+	else
+	{
+		TimeWeaponRaising();
+	}
+}
+
+/** ironsight aiming: lower weapon */
+simulated function LowerWeapon()
+{
+	// if inactive then just exit
+	if(IsInState('Inactive'))
+	{
+		return;
+	}
+	
+	// if reloading at all then delay aiming and exit
+	if(IsInState('WeaponReloading') || IsTimerActive('ReloadWeapon') || IsTimerActive('TimeReload'))
+	{
+		bAimingDelay = false;
+		return;
+	}
+	
+	// clear idle if active
+	if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayIdleAnimation');
+	
+	// clear raising if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
+	
+	// clear lowering if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponLowering');
+	
+	// disable aiming delay, used in various checks
+	bAimingDelay = false;
+	
+	// playing aim fire so continue after the animaion is finished
+	if(IsPlayingAnim(ArmAimFireAnim))
+	{
+		SetTimer(GetAnimTimeLeft() + 0.01, false, 'TimeWeaponLowering');
+	}
+	// playing normal fire so continue after the animation is finished
+	else if(IsPlayingAnim(ArmFireAnim))
+	{
+		SetTimer(GetAnimTimeLeft() + 0.01, false, 'PlayIdleAnimation');
+	}
+	// safe to just continue
+	else
+	{
+		TimeWeaponLowering();
+	}
+}
+
+/** time weapon raising; called by RaiseWeapon */
+simulated function TimeWeaponRaising()
+{
+	local float AimTime;
+	local float TimeDiff;
+	
+	// if playing aim animation, grab the difference and apply to start offset
+	if(IsPlayingAnim(ArmAimAnim))
+	{
+		// start difference to apply
+		TimeDiff = GetAnimTimeLeft();
+		AimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false, , TimeDiff);
+	}
+	// playing aim fire so grab the time remaining
+	else if(IsPlayingAnim(ArmAimFireAnim))
+	{
+		AimTime = GetAnimTimeLeft() + 0.01;
+	}
+	// safe to normally play the animation
+	else
+	{
+		AimTime = PlayWeaponAnim(ArmAimANim, ArmAimAnimRate, false);
+	}
+	
+	// enable aiming
+	bIsAiming = true;
+	// set idle animation to aim idle animation
+	ArmIdleAnims[0] = ArmAimIdleAnim;
+	// set fire animation to aim fire animation
+	ArmFireAnim = ArmAimFireAnim;
+	// set view offset to ironsight view offset
+	ArmViewOffset = IronsightViewOffset;
+	// set camera field of view to aiming field of view
+	SetFOV(AimingFOV);
+	// set mesh field of view to aiming field of view
+	SetMeshFOV(AimingMeshFOV);
+	// play idle animation after aim animation finishes
+	SetTimer(AimTime, false, 'PlayIdleAniation');
+}
+
+/** time weapon lowering; called by LowerWeapon */
+simulated function TimeWeaponLowering()
+{
+	local float AimTime;
+	local float TimeDiff;
+	
+	// if playng aim animation, grab the difference and apply to start offset
+	if(IsPlayingAnim(ArmAimAnim))
+	{
+		// start difference to appu
+		TimeDiff = GetAnimTImeLeft();
+		AimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false, , TimeDiff);
+	}
+	// safe to normally play the animation
+	else
+	{
+		AimTime = PlayWeaponAnim(ArmAimAnim, -ArmAimAnimRate, false);
+	}
+	
+	// disable aiming
+	bIsAiming = false;
+	// reset arm idle animation
+	ArmIdleAnims[0] = default.ArmIdleAnims[0];
+	// reset arm fire animation
+	ArmFireAnim = default.ArmFireAnim;
+	// reset arm view offset
+	ArmViewOffset = default.ArmViewOffset;
+	// reset camera field of view
+	SetFOV();
+	// reset mesh field of view
+	SetMeshFOV(DefaultMeshFOV);
+	// play idle animation after aim animation finishes
+	SetTimer(Abs(AimTime), false, 'PlayIdleAnimation');
+}
+
+/** set camera field of view */
+simulated function SetFOV(optional float NewFOV)
+{
+	local TPlayerController PC;
+	
+	if((Instigator != none) && Instigator.Controller != none)
+	{
+		PC = TPlayerController(Instigator.Controller);
+		if(NewFOV > 0.0)
+		{
+			PC.StartZoomNonlinear(NewFOV, 10.0f);
+		}
+		else
+		{
+			PC.EndZoomNonlinear(10.0f);
+		}
+	}
+}
+
+/** set mesh field of view */
+simulated function SetMeshFOV(float NewFOV, optional bool bForceFOV)
+{
+	if((Mesh != none) && Mesh.bAttached)
+	{
+		DesiredMeshFOV = NewFOV;
+	}
+}
+
+/** adjust mesh field of view; called by Tick */
+simulated function AdjustMeshFOV(float DeltaTime)
+{
+	if((Mesh != none) && Mesh.bAttached)
+	{
+		if(CurrentMeshFOV != DesiredMeshFOV)
+		{
+			CurrentMeshFOV != FInterpTo(CurrentMeshFOV, DesiredMeshFOV, DeltaTime, 10.0f);
+			UDKSkeletalMeshComponent(Mesh).SetFOV(CurrentMeshFOV);
+			
+			if((Firearm != none) && Firearm.Mesh != none)
+			{
+				UDKSkeletalMeshComponent(Firearm.Mesh).SetFOV(CurrentMeshFOV);
+			}
+		}
+	}
+}
+
+/** overloaded: tick */
+simulated event Tick(float DeltaTime)
+{
+	super.Tick(DeltaTime);
+	
+	// adjust mesh field of view
+	AdjustMeshFOV(DeltaTime);
+}
+
 /** overloaded: play fire effects */
 simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation)
 {
 	if(ArmFireAnim != '')
 	{
 		PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false);
-		PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false, Firearm.mesh);
+		
+		// fire anim was changed to aim fire so play normal fire anim for the firearm
+		if(ArmFireAnim == ArmAimFireAnim)
+		{
+			PlayWeaponAnim(default.ArmFireAnim, ArmFireAnimRate, false, Firearm.Mesh);
+		}
+		else
+		{
+			PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false, Firearm.mesh);
+		}
 	}
 }
 
@@ -561,6 +993,12 @@ simulated state WeaponReloading
 	/** begin state */
 	simulated function BeginState(name PrevState)
 	{
+		// clear idle anim timer is still active
+		if(IsTimerActive('PlayIdleAnimation'))
+		{
+			ClearTimer('PlayIdleAnimation');
+		}
+	
 		// playing anims except looping anims (will be our idle anim)
 		if(IsPlayingAnims(, true))
 		{
@@ -585,6 +1023,13 @@ simulated state WeaponReloading
 		// clear our timers
 		ClearTimer('TimeWeaponReload');
 		ClearTimer('Reload');
+		
+		// aiming delay, so begin raising
+		if(bAimingDelay)
+		{
+			bAimingDelay = false;
+			TimeWeaponRaising();
+		}
 	}
 	
 	/** is weapon reloading */
@@ -642,18 +1087,37 @@ defaultproperties
 	
 	// mesh settings
 	ArmViewOffset = (X=43.0)
+	IronsightViewOffset = (X=40.0)
+	DefaultMeshFOV = 60.0f
+	CurrentMeshFOV = 60.0f
+	DesiredMeshFOV = 60.0f
+	AimingMeshFOV = 30.0f
+	
+	// -------------------------------------- RECOIL
+	Recoil = 250.0;
+	MaxRecoil = 1000.0
+	AimRecoil = 170.0
+	RecoilInterpSpeed = 10.0
+	RecoilDeclinePct = 1.0
+	RecoilDeclineSpeed = 10.0
 	
 	// -------------------------------------- ANIMATIONS
 	ArmIdleAnims(0) = 1p_Idle
 	ArmEquipAnim = 1p_Equip
 	ArmFireAnim = 1p_Fire
 	ArmReloadAnim = 1p_Reload
+	ArmAimAnim = 1p_ToAim
+	ArmAimIdleAnim = 1p_AimIdle
+	ArmAimFireAnim = 1p_AimFire
 	
 	// -------------------------------------- ANIMATION RATES
 	ArmIdleAnimRate = 1.0
 	ArmEquipAnimRate = 1.0
 	ArmFireAnimRate = 1.0
 	ArmReloadAnimRate = 1.0
+	ArmAimAnimRate = 1.0
+	ArmAimIdleAnimRate = 1.0
+	ArmAimFireAnimRate = 1.0
 	
 	// -------------------------------------- WEAPON SETTINGS
 	bInstantHit = true
@@ -667,6 +1131,9 @@ defaultproperties
 	InstantHitDamageTypes(0) = class'DamageType'
 	InventorySlot = 0;
 	WeaponSubClass = 0;
+	
+	// -------------------------------------- IRONSIGHT
+	AimingFOV = 60.0f
 	
 	// -------------------------------------- SOCKETS
 	WeaponSocket = WeaponSocket

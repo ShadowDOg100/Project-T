@@ -8,6 +8,24 @@ var float CrouchEyeHeight;
 /** default inventory */
 var array< class<Inventory> > Defaultinventory;
 	
+/** overloaded: process view rotation */
+simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
+{
+	if(Weapon != none)
+	{
+		TWeapon(Weapon).ProcessViewRotation(DeltaTime, out_ViewRotation, out_DeltaRot);
+	}
+	
+	out_ViewRotation += out_DeltaRot;
+	out_DeltaRot = rot(0,0,0);
+	
+	if(PlayerController(Controller) != none)
+	{
+		out_ViewRotation = PlayerController(Controller).LimitViewRotation(out_ViewRotation, ViewPitchMin, ViewPitchMax);
+	}
+}
+	
+	
 /** set movement physics */
 function SetMovementPhysics()
 {
