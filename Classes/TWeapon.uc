@@ -3,6 +3,12 @@ class TWeapon extends UDKWeapon
 	config(Weapon)
 	abstract;
 
+// -------------------------------------- MUZZLE FLASH
+/** muzzle flash class */
+var class<TMuzzleFlash> MuzzleFlashClass;
+/** muzzle flash */
+var TMuzzleFlash MuzzleFlash;
+	
 // -------------------------------------- RECOIL
 /** recoil */
 var(Recoil) float Recoil;

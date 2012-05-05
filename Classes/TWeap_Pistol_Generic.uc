@@ -12,6 +12,9 @@ defaultproperties
 		AnimSets(0) = AnimSet'T.Anims.Anims_Arms_Generic'
 	end object
 	
+	// muzzle flash
+	MuzzleFlashClass = class'TMuzzleFlash_Pistol_Generic'
+	
 	// firearm
 	FirearmClass = class'TFirearm_Pistol_Generic'
 	
