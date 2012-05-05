@@ -3,13 +3,13 @@ class TWeap_Pistol_Generic extends TWeapon;
 defaultproperties
 {
 	// mesh settings
-	ArmViewOffset = (X=43.0)
+	ArmViewOffset = (X=18.0, Z=-1)
 	IronsightViewOffset = (X=47.0)
 	AimingMeshFOV = 45.0f
 	
 	begin object name=ArmsMeshComp
-		SkeletalMesh = SkeletalMesh'MyPackage.1p_Arms_LowRes_SkMesh'
-		AnimSets(0) = AnimSet'MyPackage.1p_Arms_Glock_Anims'
+		SkeletalMesh = SkeletalMesh'T.Mesh.SK_Arms_Generic'
+		AnimSets(0) = AnimSet'T.Anims.Anims_Arms_Generic'
 	end object
 	
 	// firearm
