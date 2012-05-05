@@ -3,8 +3,8 @@ class TWeap_Pistol_Generic extends TWeapon;
 defaultproperties
 {
 	// mesh settings
-	ArmViewOffset = (X=18.0, Z=-1)
-	IronsightViewOffset = (X=47.0)
+	ArmViewOffset = (X=6)
+	IronsightViewOffset = (X=6)
 	AimingMeshFOV = 45.0f
 	
 	begin object name=ArmsMeshComp
