@@ -1,4 +1,4 @@
-class TMuzzleFlashClass extends Object;
+class TMuzzleFlash extends Object;
 
 /** firearm muzzle flash socket */
 var() name MuzzleFlashSocket;
@@ -50,7 +50,7 @@ simulated function AttachTo(TFirearm Weap)
 	}
 	
 	// muzzle flash light
-	if((MuzzleLightClass != none) && MuzzleFlashLight == non)
+	if((MuzzleLightClass != none) && MuzzleFlashLight == none)
 	{
 		// create muzzle light
 		MuzzleFlashLight = new(self) MuzzleLightClass;
@@ -105,7 +105,7 @@ simulated function Activate()
 	// activate light
 	if(MuzzleFlashLight != none)
 	{
-		MuzzleFlashLight.ActivateSystem();
+		MuzzleFlashLight.ResetLight();
 	}
 }
 

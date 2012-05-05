@@ -649,6 +649,12 @@ simulated function DetachFirearm()
 {
 	if(Firearm != none)
 	{
+		if(MuzzleFlash != none)
+		{
+			MuzzleFlash.DetachFrom(Firearm);
+			MuzzleFlash = none;
+		}
+		
 		Firearm.DetachFrom();
 	}
 }
@@ -945,6 +951,36 @@ simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation
 		{
 			PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false, Firearm.mesh);
 		}
+	}
+	
+	// play muzzle flash
+	PlayMuzzleFlashEffect();
+}
+
+/** muzzle flash effect */
+simulated function PlayMuzzleFlashEffect()
+{
+	// muzzle flash
+	if(MuzzleFlashClass != none && MuzzleFlash == none)
+	{
+		MuzzleFlash = new(self) MuzzleFlashClass;
+		MuzzleFlash.AttachTo(Firearm);
+	}
+	
+	// activate effects
+	if(MuzzleFlash != none)
+	{
+		MuzzleFlash.Activate();
+		SetTimer(MuzzleFlash.MuzzleDuration, false, 'StopMuzzleFlashEffect');
+	}
+}
+
+/** stop muzzle flash effect */
+simulated function StopMuzzleFlashEffect()
+{
+	if(MuzzleFlash != none)
+	{
+		MuzzleFlash.Deactivate();
 	}
 }
 

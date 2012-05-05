@@ -1,4 +1,4 @@
-class TMuzzleFlash_Pistol_Generic;
+class TMuzzleFlash_Pistol_Generic extends TMuzzleFlash;
 
 defaultproperties
 {
