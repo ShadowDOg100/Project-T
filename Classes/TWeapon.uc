@@ -3,6 +3,10 @@ class TWeapon extends UDKWeapon
 	config(Weapon)
 	abstract;
 
+// -------------------------------------- WEAPON ATTACHMENT
+/** attachment */
+var class<TWeaponAttachment> AttachmentClass;
+	
 // -------------------------------------- MUZZLE FLASH
 /** muzzle flash class */
 var class<TMuzzleFlash> MuzzleFlashClass;
@@ -597,6 +601,8 @@ simulated event SetPosition(UDKPawn Holder)
 /** overloaded: attach mesh */
 simulated function AttachWeaponTo(SkeletalMeshComponent SkelMesh, optional name SocketName)
 {
+	local TPawn P;
+	
 	super.AttachWeaponTo(SkelMesh, SocketName);
 	
 	if((Mesh != none) && !Mesh.bAttached)
@@ -604,6 +610,23 @@ simulated function AttachWeaponTo(SkeletalMeshComponent SkelMesh, optional name 
 		AttachComponent(Mesh);
 		AttachFirearm();
 		SetHidden(false);
+	}
+	
+	if(Instigator != none)
+	{
+		P = TPawn(Instigator);
+		
+		if(Role == ROLE_Authority)
+		{
+			if(P.WeaponAttachmentClass != AttachmentClass)
+			{
+				P.WeaponAttachmentClass = AttachmentClass;
+				if(WorldInfo.NetMode == NM_ListenServer || WorldInfo.NetMode == NM_Standalone || (WorldInfo.NetMode == NM_Client && Instigator.IsLocallyControlled()))
+				{
+					P.AttachWeapon();
+				}
+			}
+		}
 	}
 }
 
@@ -632,12 +655,28 @@ simulated function AttachFirearm()
 /** overloaded: detach arms */
 simulated function DetachWeapon()
 {
+	local TPawn P;
+
 	super.DetachWeapon();
 	
 	if((Mesh != none) && Mesh.bAttached)
 	{
 		DetachFirearm();
 		DetachComponent(Mesh);
+	}
+	
+	if(Instigator != none)
+	{
+		P = TPawn(Instigator);
+		
+		if(Role == ROLE_Authority && P.WeaponAttachmentClass == AttachmentClass)
+		{
+			P.WeaponAttachmentClass = none;
+			if(Instigator.IsLocallyControlled())
+			{
+				P.AttachWeapon();
+			}
+		}
 	}
 	
 	SetBase(none);
@@ -1134,6 +1173,9 @@ defaultproperties
 	CurrentMeshFOV = 60.0f
 	DesiredMeshFOV = 60.0f
 	AimingMeshFOV = 30.0f
+	
+	// -------------------------------------- ATTACHMENT
+	AttachmentClass = class'TWeaponAttachment'
 	
 	// -------------------------------------- RECOIL
 	Recoil = 250.0;

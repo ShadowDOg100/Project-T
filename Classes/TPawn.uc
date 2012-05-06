@@ -2,11 +2,98 @@ class TPawn extends UDKPawn
 	config(Game)
 	placeable;
 
+// -------------------------------------- WEAPON
+/** weapon attachment class */
+var repnotify class<TWeaponAttachment> WeaponAttachmentClass;
+/** weapon attachment */
+var TWeaponAttachment WeaponAttachment;
+	
 /** crouch eye height */ 
 var float CrouchEyeHeight;
 
 /** default inventory */
 var array< class<Inventory> > Defaultinventory;
+	
+/** replication */
+replication
+{
+	if(bNetDirty)
+		WeaponAttachmentClass;
+}
+
+/** replicated event */
+simulated event ReplicatedEvent(name VarName)
+{
+	if(VarName == 'WeaponAttachmentClass')
+	{
+		AttachWeapon();
+		return;
+	}
+	else
+	{
+		super.ReplicatedEvent(VarName);
+	}
+}
+	
+/** replicated: weapon attachment changed */
+simulated function AttachWeapon()
+{
+	// weapon attachment is new or been destroyed
+	if(WeaponAttachment == none || WeaponAttachment.Class != WeaponAttachmentClass)
+	{
+		// detach current attachment if it exists
+		if(WeaponAttachment != none)
+		{
+			WeaponAttachment.DetachFrom(Mesh);
+			WeaponAttachment.Destroy();
+		}
+		
+		// spawn weapon attachment
+		if(WeaponAttachmentClass != none)
+		{
+			WeaponAttachment = Spawn(WeaponAttachmentClass, self);
+			WeaponAttachment.Instigator = self;
+		}
+		else
+		{
+			// destroy weapon attachment
+			WeaponAttachment = none;
+		}
+		
+		// attach weapon attachment
+		if(WeaponAttachment != none)
+		{
+			WeaponAttachment.AttachTo(self);
+			WeaponAttachment.ChangeVisibility(false);
+		}
+	}
+}
+	
+/** overloaded: play dying */
+simulated function PlayDying(class<DamageType> DamageType, vector HitLocation)
+{
+	// destory weapon attachment
+	WeaponAttachmentClass = none;
+	AttachWeapon();
+	
+	super.PlayDying(DamageType, HitLocation);
+}
+	
+/** overloaded: weapon fired */
+simulated function WeaponFired(Weapon InWeapon, bool bVieReplication, optional vector HitLocation)
+{
+	super.WeaponFired(InWeapon, bVieReplication, HitLocation);
+	
+	// play impact effects
+	if(WeaponAttachment != none)
+	{
+		if(HitLocation != vect(0,0,0) && (WorldInfo.NetMode == NM_ListenServer || WorldInfo.NetMode == NM_Standalone || bVieReplication))
+		{
+			//PlayImpactEffects(HitLocation);
+			WeaponAttachment.PlayImpactEffects(HitLocation);
+		}
+	}
+}
 	
 /** overloaded: process view rotation */
 simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
