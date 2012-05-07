@@ -6,11 +6,16 @@ Shit programming team need to do:
 5. Walking speeds and eye height adjusted, sprint
 6. Learn custom kismet events and kismet in general, matinee
 7. Flashlight
-8. Armor(pickup as well)
+8. Armor(pickup as well, health pickup)
 9. Melee weapons
 10. Gernades
 11. Crosshairs
 12. NPC menu system
 13. Checkpoint and saves and loads
 14. Fall damage
-15. 
+15. Hit location based damage
+16. Gibs
+17. AI
+18. Mounted weapons
+19. Radar
+20. Abjective and waypoints
