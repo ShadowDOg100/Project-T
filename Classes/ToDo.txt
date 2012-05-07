@@ -8,7 +8,7 @@ Shit programming team need to do:
 7. Flashlight
 8. Armor(pickup as well, health pickup)
 9. Melee weapons
-10. Gernades
+10. Grenades
 11. Crosshairs
 12. NPC menu system
 13. Checkpoint and saves and loads
@@ -19,3 +19,16 @@ Shit programming team need to do:
 18. Mounted weapons
 19. Radar
 20. Abjective and waypoints
+
+
+Cameron:
+2, 4, 12
+
+Eric:
+8, 10, 9
+
+Julian:
+7, 14, 11
+
+Josh:
+6, 3, 1, 5
