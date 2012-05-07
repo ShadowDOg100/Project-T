@@ -1,0 +1,16 @@
+Shit programming team need to do:
+1. Fix crouch
+2. Time weapon animations better
+3. Weapon zoom
+4. Redo inventory HUD class
+5. Walking speeds and eye height adjusted, sprint
+6. Learn custom kismet events and kismet in general, matinee
+7. Flashlight
+8. Armor(pickup as well)
+9. Melee weapons
+10. Gernades
+11. Crosshairs
+12. NPC menu system
+13. Checkpoint and saves and loads
+14. Fall damage
+15. 
