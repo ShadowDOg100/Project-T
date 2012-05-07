@@ -120,7 +120,6 @@ replication
 }
 
 /** process view rotation; called by pawn */
-/** process view rotation; called by Pawn */
 simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
 {
 	local rotator DeltaRecoil;
