@@ -2,18 +2,21 @@ class TPawn extends UDKPawn
 	config(Game)
 	placeable;
 
+// Armor
+var int armor;
+
 // -------------------------------------- WEAPON
 /** weapon attachment class */
 var repnotify class<TWeaponAttachment> WeaponAttachmentClass;
 /** weapon attachment */
 var TWeaponAttachment WeaponAttachment;
-	
-/** crouch eye height */ 
+
+/** crouch eye height */
 var float CrouchEyeHeight;
 
 /** default inventory */
 var array< class<Inventory> > Defaultinventory;
-	
+
 /** replication */
 replication
 {
@@ -34,7 +37,7 @@ simulated event ReplicatedEvent(name VarName)
 		super.ReplicatedEvent(VarName);
 	}
 }
-	
+
 /** replicated: weapon attachment changed */
 simulated function AttachWeapon()
 {
@@ -47,7 +50,7 @@ simulated function AttachWeapon()
 			WeaponAttachment.DetachFrom(Mesh);
 			WeaponAttachment.Destroy();
 		}
-		
+
 		// spawn weapon attachment
 		if(WeaponAttachmentClass != none)
 		{
@@ -59,7 +62,7 @@ simulated function AttachWeapon()
 			// destroy weapon attachment
 			WeaponAttachment = none;
 		}
-		
+
 		// attach weapon attachment
 		if(WeaponAttachment != none)
 		{
@@ -68,22 +71,22 @@ simulated function AttachWeapon()
 		}
 	}
 }
-	
+
 /** overloaded: play dying */
 simulated function PlayDying(class<DamageType> DamageType, vector HitLocation)
 {
 	// destory weapon attachment
 	WeaponAttachmentClass = none;
 	AttachWeapon();
-	
+
 	super.PlayDying(DamageType, HitLocation);
 }
-	
+
 /** overloaded: weapon fired */
 simulated function WeaponFired(Weapon InWeapon, bool bVieReplication, optional vector HitLocation)
 {
 	super.WeaponFired(InWeapon, bVieReplication, HitLocation);
-	
+
 	// play impact effects
 	if(WeaponAttachment != none)
 	{
@@ -94,7 +97,7 @@ simulated function WeaponFired(Weapon InWeapon, bool bVieReplication, optional v
 		}
 	}
 }
-	
+
 /** overloaded: process view rotation */
 simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
 {
@@ -102,17 +105,17 @@ simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRota
 	{
 		TWeapon(Weapon).ProcessViewRotation(DeltaTime, out_ViewRotation, out_DeltaRot);
 	}
-	
+
 	out_ViewRotation += out_DeltaRot;
 	out_DeltaRot = rot(0,0,0);
-	
+
 	if(PlayerController(Controller) != none)
 	{
 		out_ViewRotation = PlayerController(Controller).LimitViewRotation(out_ViewRotation, ViewPitchMin, ViewPitchMax);
 	}
 }
-	
-	
+
+
 /** set movement physics */
 function SetMovementPhysics()
 {
@@ -135,7 +138,7 @@ simulated event StartCrouch(float HeightAdjust)
 	SetBaseEyeHeight();
 	EyeHeight += HeightAdjust;
 	CrouchMeshZOffset = HeightAdjust;
-	
+
 	if(Mesh != none)
 	{
 		Mesh.SetTranslation(Mesh.Translation + vect(0,0,1) * HeightAdjust);
@@ -148,7 +151,7 @@ simulated event EndCrouch(float HeightAdjust)
 	SetBaseEyeHeight();
 	EyeHeight -= HeightAdjust;
 	CrouchMeshZOffset = 0.0;
-	
+
 	if(Mesh != none)
 	{
 		Mesh.SetTranslation(Mesh.Translation - vect(0,0,1) * HeightAdjust);
@@ -177,7 +180,7 @@ event UpdateEyeHeight(float DeltaTime)
 		bUpdateEyeHeight = false;
 		return;
 	}
-	
+
 	EyeHeight = FInterpTo(EyeHeight, BaseEyeHeight, DeltaTime, 10.0);
 }
 
@@ -198,7 +201,7 @@ simulated event vector GetPawnViewLocation()
 simulated event BecomeViewTarget(PlayerController PC)
 {
 	super.BecomeViewTarget(PC);
-	
+
 	if(LocalPlayer(PC.Player) != none)
 	{
 		bUpdateEyeHeight = true;
@@ -223,11 +226,11 @@ function AddDefualtInventory()
 {
 	local class<Inventory> InvClass;
 	local Inventory Inv;
-	
+
 	foreach DefaultInventory(InvClass)
 	{
 		Inv = FindInventoryType(InvClass);
-		
+
 		if(Inv == none)
 		{
 			CreateInventory(InvClass, Weapon != none);
@@ -250,14 +253,44 @@ simulated function SwitchWeapon(byte NewGroup)
 	}
 }
 
+// get pawn health
+function int getHealth()
+{
+        return health;
+}
+
+// set pawn health
+function setHealth(int value)
+{
+        if (value <= 100)
+                health = value;
+        else
+                health = 100;
+}
+
+// get pawn armor
+function int getArmor()
+{
+        return armor;
+}
+
+// set pawn armor
+function setArmor(int value)
+{
+        if (value <= 100)
+                armor = value;
+        else
+                armor = 100;
+}
+
 defaultproperties
 {
 	InventoryManagerClass = class'TGame.TInventoryManager'
 	ControllerClass = none
-	
+
 	// default inventory
 	DefaultInventory(0) = class'TGame.TWeap_Pistol_Generic'
-	
+
 	// mesh
 	begin object class=SkeletalMeshComponent name=SkelMesh
 		BlockZeroExtent = true
@@ -295,7 +328,7 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
-	GroundSpeed = 440.0
+	GroundSpeed = 1760.0
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
@@ -315,4 +348,7 @@ defaultproperties
 	// camera
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
+	
+	health = 50
+	armor = 0
 }

@@ -13,8 +13,7 @@ var String switchNum;
 var bool bOpen;
 var bool bTouch;
 
-var class<TWeapon> touchWeap;
-
+// Pickup
 var TPickup PickupActor;
 
 singular event Destroyed()
@@ -175,10 +174,10 @@ exec function OpenWeaponSelection(optional string mouse)
 {
 	local bool start;
 	local int equiped;
-	
+
 	if(!bOpen)
 		return;
-	
+
 	start = true;
 	if ( PlayerOwner.Pawn != None )
 	{
@@ -186,7 +185,7 @@ exec function OpenWeaponSelection(optional string mouse)
 		{
 			InventoryMovie = new class'GFxUI_Inventory';
 		}
-		
+
 		if( InventoryMovie.bMovieIsOpen )
 		{
 			equiped = InventoryMovie.GetOpen();
@@ -210,17 +209,17 @@ exec function OpenWeaponSelection(optional string mouse)
 			InventoryMovie.Start(start);
 			SetTimer(1, false, 'CloseInventory');
 		}
-		
+
 	}
 }
 
 exec function GotoOpenWeaponSelection(string num)
 {
 	local bool open;
-	
+
 	if(!bOpen)
 		return;
-	
+
 	open = false;
 	if ( PlayerOwner.Pawn != None )
 	{
@@ -276,13 +275,14 @@ function CompleteCloseTimer()
 	}
 }
 
+// Weapon Pickup
 function ToggleWeaponPickup()
 {
 	local array<TWeapon> WeaponList;
 	local int num1, num2;
 	local TPawn TP;
 	local String message;
-	
+
 	TP = TPawn(PlayerOwner.Pawn);
 	if ( PlayerOwner.Pawn != None )
 	{
@@ -290,7 +290,7 @@ function ToggleWeaponPickup()
 		{
 			PickupMovie = new class'GFxUI_PickUp';
 		}
-		
+
 		if(!PickupMovie.bMovieIsOpen)
 		{
 			num1 = PickupActor.GetWeapSlot();
@@ -316,56 +316,31 @@ function ToggleWeaponPickup()
 	}
 }
 
-function SetTouch(bool touch, class<TWeapon> weap, TPickup PickupWeap)
+// Item Pickup
+function ToggleItemPickup()
 {
-	ToggleWeaponPickup();
-	bTouch = touch;
-	touchWeap = weap;
-	PickupActor = PickupWeap;
-}
-
-exec function PickUp()
-{
-	local Inventory Inv;
 	local TPawn TP;
-	local int num1, num2;
-	local array<TWeapon> WeaponList;
+	local String message;
+
 	TP = TPawn(PlayerOwner.Pawn);
-	PlayerOwner.ClientMessage("PickUp");
-	if(bTouch)
+	if ( PlayerOwner.Pawn != None )
 	{
-		num1 = PickupActor.GetWeapSlot();
-		num2 = PickupActor.GetWeapSubClass();
-		TP.GetWeaponList(WeaponList,true);
-		if(WeaponList[num1] != None)
+		if (PickupMovie == None)
 		{
-			if(WeaponList[num1].GetWeaponSubClass() == num2)
-			{
-				WeaponList[num1].AddStorageAmmo(PickupActor.getAmmo() + PickupActor.getClip());
-				PickupActor.Destroy();
-				ToggleWeaponPickup();
-				bTouch = false;
-			}
-			else
-			{
-				//swap weapon
-			}
+			PickupMovie = new class'GFxUI_PickUp';
+		}
+
+		if(!PickupMovie.bMovieIsOpen)
+		{
+			message = "pickup";
+			PickupMovie.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
+			PickupMovie.SetTimingMode(TM_Real);
+			PickupMovie.Start();
+			PickupMovie.setText(message);
 		}
 		else
 		{
-			PlayerOwner.ClientMessage("PickUp");
-			Inv = spawn(touchWeap);
-			if ( Inv != None )
-			{
-				PlayerOwner.ClientMessage("PickUp");
-				TP.CreateInventory( touchWeap );
-				TP.GetWeaponList(WeaponList, true);
-				WeaponList[num1].SetAmmo(PickupActor.getAmmo());
-				WeaponList[num1].SetClip(PickupActor.getClip());
-				PickupActor.Destroy();
-				ToggleWeaponPickup();
-				bTouch = false;
-			}
+			PickupMovie.Close(false);
 		}
 	}
 }

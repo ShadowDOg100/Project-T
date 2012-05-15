@@ -1,15 +1,6 @@
 class Generic_Pickup extends TPickup
     placeable;
 
-var() int ammo;
-var int clipAmmo;
-var PlayerController PC;
-var bool bTouch;
-var int WeapSlot;
-var int WeapSubClass;
-
-
-
 event Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vector HitNormal)
 {
     if (Pawn(Other) != none)
@@ -17,7 +8,7 @@ event Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vecto
         //Ideally, we should also check that the touching pawn is a player-controlled one.
 	    PC = PlayerController(Pawn(Other).Controller);
 	    bTouch = true;
-		(TGFxHudWrapper(PC.myHUD)).SetTouch(bTouch, class'TGame.TWeap_Pistol_Generic', Self);
+		SetTouch(bTouch, class'TGame.TWeap_Pistol_Generic', Self,"WP");
 		PC.ClientMessage("Touch");
     }
 }
@@ -25,28 +16,8 @@ event Touch(Actor Other, PrimitiveComponent OtherComp, vector HitLocation, vecto
 event UnTouch( Actor Other )
 {
     bTouch = false;
-    (TGFxHudWrapper(PC.myHUD)).SetTouch(bTouch, class'TGame.TWeap_Pistol_Generic', Self);
+    SetTouch(bTouch, class'TGame.TWeap_Pistol_Generic', Self,"WP");
 	PC.ClientMessage("Untouch");
-}
-
-function int GetWeapSlot()
-{
-	return WeapSlot;
-}
-
-function int GetWeapSubClass()
-{
-	return WeapSubClass;
-}
-
-function int getAmmo()
-{
-	return ammo;
-}
-
-function int getClip()
-{
-	return clipAmmo;
 }
 
 DefaultProperties
@@ -56,7 +27,7 @@ DefaultProperties
 	Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
 		bEnabled=true
 	End Object
-	
+
 	Components.Add(MyLightEnvironment)
 
 	Begin Object Class=SkeletalMeshComponent Name=PickupMesh
@@ -77,8 +48,9 @@ DefaultProperties
 	Components.Add(CollisionCylinder)
 	
 	//clip + ammo
-    ammo = 90
+        ammo = 90
 	clipAmmo = 18
 	WeapSlot = 1
 	WeapSubClass = 1
+	item = "WP"
 }

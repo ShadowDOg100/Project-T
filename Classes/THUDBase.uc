@@ -1,5 +1,5 @@
 class THUDBase extends UDKHUD
-	dependson(UTWeapon)
+	dependson(TWeapon)
 	config(Game);
 
 /** GFx movie used for displaying pause menu */

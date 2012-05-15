@@ -614,7 +614,7 @@ simulated function AttachWeaponTo(SkeletalMeshComponent SkelMesh, optional name 
 	if(Instigator != none)
 	{
 		P = TPawn(Instigator);
-		
+
 		if(Role == ROLE_Authority)
 		{
 			if(P.WeaponAttachmentClass != AttachmentClass)
