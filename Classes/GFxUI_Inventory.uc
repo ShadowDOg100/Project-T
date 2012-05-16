@@ -27,14 +27,9 @@ function bool Start(optional bool UpdatedEquipped)
 	AddCaptureKeys();
 	if(!bInitialized)
 		ConfigureInventory();
-	PopulateArsenal();
 
 	// Play the "open" animation.
 	Window.GotoAndPlay("open");
-	if(UpdatedEquipped == true)
-	{
-		(TGFxHudWrapper(GetPC().myHUD)).SetTimer(0.5, false, 'UpdateEquippedWeapon');
-	}
 
 	return true;
 }
@@ -71,88 +66,8 @@ function AddCaptureKeys()
     AddCaptureKey('four');
 }
 
-/*
- * Starts inventory's the "close" animation.
- */
-function StartCloseAnimation()
-{
-	TGFxHudWrapper(GetPC().myHUD).SetbOpen();
-    Window.GotoAndPlay("close");
-}
-
-/*
- * Event handler for when the "close" animation is complete.
- * Fired from Flash.
- */
-function OnCloseAnimComplete()
-{
-    TGFxHudWrapper(GetPC().myHUD).CompleteCloseTimer();
-}
-
 function AddEventListeners()
 {
-}
-
-function MouseClick()
-{
-	StartCloseAnimation();
-}
-
-function CloseOpen()
-{
-	switch(equiped)
-	{
-		case 1:
-			Window.GotoAndPlay("oneclose");
-			break;
-		case 2:
-			Window.GotoAndPlay("twoclose");
-			break;
-		case 3:
-			Window.GotoAndPlay("threeclose");
-			break;
-		case 4:
-			Window.GotoAndPlay("fourclose");
-			break;
-	}
-}
-
-function Goto(String num) 
-{
-	local int num2;
-	if(num == "one")
-		num2 = 1;
-	else if(num == "two")
-		num2 = 2;
-	else if(num == "three")
-		num2 = 3;
-	else if(num == "four")
-		num2 = 4;
-		
-	Window.GotoAndPlay(num$"open");
-	TPlayerController(GetPC()).SwitchWeapon(num2);
-	equiped = num2;
-	
-	(TGFxHudWrapper(GetPC().myHUD)).SetTimer(0.3, false, 'CloseInventoryTimer');
-}
-
-function OpenOpen()
-{
-	switch(equiped)
-	{
-		case 1:
-			Window.GotoAndPlay("oneopen");
-			break;
-		case 2:
-			Window.GotoAndPlay("twoopen");
-			break;
-		case 3:
-			Window.GotoAndPlay("threeopen");
-			break;
-		case 4:
-			Window.GotoAndPlay("fouropen");
-			break;
-	}
 }
 
 /*
@@ -178,58 +93,9 @@ function PopulateArsenal()
 	
 }
 
-function UpdateEquippedWeapon()
-{
-    local int CurrentWeaponGroup;
-	local string str;
-	str = "one";
-	CurrentWeaponGroup = TWeapon(GetPC().Pawn.Weapon).GetInventorySlot();
-	switch(CurrentWeaponGroup)
-	{
-		case 1:
-			str = "one";
-			break;
-		case 2:
-			str = "two";
-			break;
-		case 3:
-			str = "three";
-			break;
-		case 4:
-			str = "four";
-			break;
-	}
-	Window.GotoAndPlay(str$"open");
-	
-	equiped = CurrentWeaponGroup;
-}
-
-
 function SwitchWeapon(byte index)
 {
     TPlayerController(GetPC()).SwitchWeapon(index);
-}
-
-function int GetOpen()
-{
-	return equiped;
-}
-
-function SetOpen(int newEquiped)
-{
-	if(newEquiped == 0)
-	{
-		equiped = 4;
-	}
-	else if (newEquiped == 5)
-	{
-		equiped = 1;
-	}
-	else
-	{
-		equiped = newEquiped;
-	}
-	TPlayerController(GetPC()).SwitchWeapon(equiped);
 }
 
 defaultproperties
@@ -238,7 +104,7 @@ defaultproperties
     bEnableGammaCorrection = FALSE
     bDisplayWithHudOff = TRUE
 	bInitialized = FALSE
-	MovieInfo=SwfMovie'T.Inventory'
+	MovieInfo=SwfMovie'T.HUD.Inventory'
 	
 	WeaponClasses(00)=class'TWeap_Pistol_Generic';
 	WeaponClasses(01)=class'TWeap_Pistol_Burst';
