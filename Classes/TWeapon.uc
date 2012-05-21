@@ -3,6 +3,14 @@ class TWeapon extends UDKWeapon
 	config(Weapon)
 	abstract;
 
+// -------------------------------------- SOUNDS
+/** firings sounds */
+var SoundCue FireSound;
+/** equip sound */
+var SoundCue EquipSound;
+/** unequip sound */
+var SoundCue UnequipSound;
+	
 // -------------------------------------- WEAPON ATTACHMENT
 /** attachment */
 var class<TWeaponAttachment> AttachmentClass;
@@ -64,6 +72,8 @@ var(Firearm) TFirearm Firearm;
 var(Animations) array<name> ArmIdleAnims;
 /** arm equip animation */
 var(Animations) name ArmEquipAnim;
+/** arm unequip animation */
+var(Animations) name ArmUnequipAnim;
 /** arm fire animation */
 var(Animations) name ArmFireAnim;
 /** arm reload animation */
@@ -80,6 +90,8 @@ var(Animations) name ArmAimFireAnim;
 var float ArmIdleAnimRate;
 /** arm equip anim rate */
 var float ArmEquipAnimRate;
+/** arm unequip anim rate */
+var float ArmUnequipAnimRate;
 /** arm fire anim rate */
 var float ArmFireAnimRate;
 /** arm reload anim rate */
@@ -614,7 +626,7 @@ simulated function AttachWeaponTo(SkeletalMeshComponent SkelMesh, optional name 
 	if(Instigator != none)
 	{
 		P = TPawn(Instigator);
-		
+
 		if(Role == ROLE_Authority)
 		{
 			if(P.WeaponAttachmentClass != AttachmentClass)
@@ -697,7 +709,7 @@ simulated function DetachFirearm()
 	}
 }
 
-/** time weapon equiping */
+/** overloaded: time weapon equiping */
 simulated function TimeWeaponEquipping()
 {
 	local float EquipAnimTime;
@@ -713,6 +725,8 @@ simulated function TimeWeaponEquipping()
 		{
 			// play animation and return anim length for equip timer
 			EquipAnimTime = PlayWeaponAnim(ArmEquipAnim, ArmEquipAnimRate, false);
+			PlayWeaponAnim(ArmEquipAnim, ArmEquipAnimRate, false, Firearm.Mesh);
+			PlayWeaponSound(EquipSound, 0.5);
 			SetTimer(EquipAnimTime, false, 'WeaponEquipped');
 		}
 	}
@@ -733,6 +747,16 @@ simulated function TimeWeaponReload()
 		// set the timer based on the anim length and actually reload
 		SetTimer(ReloadAnimTime, false, 'Reload');
 	}
+}
+
+/** overloaded: time weapon put down */
+simulated function TimeWeaponPutDown()
+{
+	local float UnequipTime;
+	
+	UnequipTime = PlayWeaponAnim(ArmUnequipAnim, ArmUnequipAnimRate, false);
+	PlayWeaponSound(UnequipSound, 0.5);
+	SetTimer(UnequipTime, false, 'WeaponIsDown');
 }
 
 /** is weapon reloading */
@@ -973,6 +997,18 @@ simulated event Tick(float DeltaTime)
 	AdjustMeshFOV(DeltaTime);
 }
 
+/** play weapon sound */
+simulated function PlayWeaponSound(SoundCue Sound, optional float Noise)
+{
+	if(Instigator == none) return;
+	
+	if(Sound != none)
+	{
+		Instigator.PlaySound(Sound, false, true);
+		MakeNoise(Noise);
+	}
+}
+
 /** overloaded: play fire effects */
 simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation)
 {
@@ -993,6 +1029,9 @@ simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation
 	
 	// play muzzle flash
 	PlayMuzzleFlashEffect();
+	
+	// play fire sound
+	PlayWeaponSound(FireSound, 1.0);
 }
 
 /** muzzle flash effect */
@@ -1187,6 +1226,7 @@ defaultproperties
 	// -------------------------------------- ANIMATIONS
 	ArmIdleAnims(0) = 1p_Idle
 	ArmEquipAnim = 1p_Equip
+	ArmUnequipAnim = 1p_Unequip
 	ArmFireAnim = 1p_Fire
 	ArmReloadAnim = 1p_Reload
 	ArmAimAnim = 1p_ToAim
@@ -1196,6 +1236,7 @@ defaultproperties
 	// -------------------------------------- ANIMATION RATES
 	ArmIdleAnimRate = 1.0
 	ArmEquipAnimRate = 1.0
+	ArmUnequipAnimRate = 1.0
 	ArmFireAnimRate = 1.0
 	ArmReloadAnimRate = 1.0
 	ArmAimAnimRate = 1.0
