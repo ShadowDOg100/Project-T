@@ -161,6 +161,11 @@ simulated function changeWalkSpeed(float multiplier)
     GroundSpeed *= multiplier;
 }
 
+simulated function bool IsSprinting()
+{
+	return useStamina;
+}
+
 exec function sprint()
 {
     if (stamina >0 && useStamina == false)
@@ -169,6 +174,9 @@ exec function sprint()
        useStamina = true;
        PlayerController(Controller).ClientMessage("sprint stamina: ");
        PlayerController(Controller).ClientMessage(stamina);
+       canWalk = true;
+	   if(Weapon != none)
+		   Weapon.StartSprint();
     }
 }
 
@@ -181,6 +189,8 @@ exec function endSprint()
         canWalk = false;
         PlayerController(Controller).ClientMessage("endSprint stamina: ");
         PlayerController(Controller).ClientMessage(stamina);
+		if(Weapon != none)
+			Weapon.StopSprint();
     }
 
 }
