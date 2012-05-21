@@ -169,13 +169,12 @@ exec function sprint()
        useStamina = true;
        PlayerController(Controller).ClientMessage("sprint stamina: ");
        PlayerController(Controller).ClientMessage(stamina);
-       canWalk = true;
     }
 }
 
 exec function endSprint()
 {
-    if(canWalk)
+    if(useStamina)
     {
         changeWalkSpeed(0.5);
         useStamina = false;
@@ -189,6 +188,7 @@ exec function endSprint()
 /** overloaded: start crouch */
 simulated event StartCrouch(float HeightAdjust)
 {
+        PlayerController(Controller).ClientMessage("StartCrouch");
         changeWalkSpeed(0.5);
 	//SetBaseEyeHeight();
 	BaseEyeHeight = CrouchEyeHeight;
@@ -204,6 +204,7 @@ simulated event StartCrouch(float HeightAdjust)
 /** overloaded: end crouch */
 simulated event EndCrouch(float HeightAdjust)
 {
+        PlayerController(Controller).ClientMessage("EndCrouch");
         changeWalkSpeed(2);
 	//SetBaseEyeHeight();
 	BaseEyeHeight = default.BaseEyeHeight;
