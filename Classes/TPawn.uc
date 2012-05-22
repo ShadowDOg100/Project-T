@@ -176,7 +176,7 @@ exec function sprint()
        PlayerController(Controller).ClientMessage(stamina);
        canWalk = true;
 	   if(Weapon != none)
-		   Weapon.StartSprint();
+		   TWeapon(Weapon).StartSprint();
     }
 }
 
@@ -190,7 +190,7 @@ exec function endSprint()
         PlayerController(Controller).ClientMessage("endSprint stamina: ");
         PlayerController(Controller).ClientMessage(stamina);
 		if(Weapon != none)
-			Weapon.StopSprint();
+			TWeapon(Weapon).EndSprint();
     }
 
 }

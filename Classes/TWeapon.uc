@@ -85,7 +85,7 @@ var(Animations) name ArmAimIdleAnim;
 /** arm aim fire animation */
 var(Animations) name ArmAimFireAnim;
 /** arm run animation */
-var(Animations) name ArmRumAnim;
+var(Animations) name ArmRunAnim;
 
 // -------------------------------------- ANIMATION RATES
 /** arm idle anim rate */
@@ -105,7 +105,7 @@ var float ArmAimIdleAnimRate;
 /** ar aim fire anim rate */
 var float ArmAimFireAnimRate;
 /** arm run animation rate */
-var float ArmRumAnimRate;
+var float ArmRunAnimRate;
 
 // -------------------------------------- IRONSIGHT
 /** is aiming */
@@ -808,7 +808,7 @@ simulated function StartSprint()
 /** sprint anim */
 simulated function EndSprint()
 {
-	PlayIdleAnimation();
+	SetTimer(0.01, false, 'PlayIdleAnimation');
 }
 
 /** ironsight aiming: raise weapon*/
@@ -1269,7 +1269,7 @@ defaultproperties
 	ArmAimAnim = 1p_ToAim
 	ArmAimIdleAnim = 1p_AimIdle
 	ArmAimFireAnim = 1p_AimFire
-	ArmSprintAnim = 1p_Sprint
+	ArmRunAnim = 1p_Sprint
 	
 	// -------------------------------------- ANIMATION RATES
 	ArmIdleAnimRate = 1.0
@@ -1280,7 +1280,7 @@ defaultproperties
 	ArmAimAnimRate = 1.0
 	ArmAimIdleAnimRate = 1.0
 	ArmAimFireAnimRate = 1.0
-	ArmSprintAnimRate = 1.0
+	ArmRunAnimRate = 1.0
 	
 	// -------------------------------------- WEAPON SETTINGS
 	bInstantHit = true
