@@ -275,6 +275,7 @@ function CompleteCloseTimer()
 	}
 }
 
+/*
 // Weapon Pickup
 function ToggleWeaponPickup()
 {
@@ -344,7 +345,7 @@ function ToggleItemPickup()
 		}
 	}
 }
-
+*/
 defaultproperties
 {
 	bOpen = true;
