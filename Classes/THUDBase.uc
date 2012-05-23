@@ -344,38 +344,40 @@ simulated function DrawShadowedRotatedTile(texture2D Tex, Rotator Rot, float X, 
 	Canvas.DrawRotatedTile(Tex,Rot,XL,YL,U,V,UL,VL);
 }
 
-function DrawMessageText(HudLocalizedMessage LocalMessage, float ScreenX, float ScreenY)
+function DisplayHUDMessage(string Message, optional float XOffsetPct = 0.05, optional float YOffsetPct = 0.05)
 {
-	local color CanvasColor;
-	local string StringMessage;
+	local float XL,YL;
+	local float BarHeight, Height, YBuffer, XBuffer, YCenter;
 
-	if ( Canvas.Font == none )
+	if (!bHudMessageRendered)
 	{
-		Canvas.Font = GetFontSizeIndex(0);
+		// Preset the Canvas
+		Canvas.SetDrawColor(255,255,255,255);
+		Canvas.Font = GetFontSizeIndex(2);
+		Canvas.StrLen(Message,XL,YL);
+
+		// Figure out sizes/positions
+		BarHeight = YL * 1.1;
+		YBuffer = Canvas.ClipY * YOffsetPct;
+		XBuffer = Canvas.ClipX * XOffsetPct;
+		Height = YL * 2.0;
+
+		YCenter = Canvas.ClipY - YBuffer - (Height * 0.5);
+
+		// Draw the Bar
+		Canvas.SetPos(0,YCenter - (BarHeight * 0.5) );
+		Canvas.DrawTile(AltHudTexture, Canvas.ClipX, BarHeight, 382, 441, 127, 16);
+
+		// Draw the Symbol
+		Canvas.SetPos(XBuffer, YCenter - (Height * 0.5));
+		Canvas.DrawTile(AltHudTexture, Height * 1.33333, Height, 734,190, 82, 70);
+
+		// Draw the Text
+		Canvas.SetPos(XBuffer + Height * 1.5, YCenter - (YL * 0.5));
+		Canvas.DrawText(Message);
+
+		bHudMessageRendered = true;
 	}
-
-	StringMessage = LocalMessage.StringMessage;
-	if ( LocalMessage.Count > 0 )
-	{
-		if ( Right(StringMessage, 1) ~= "." )
-		{
-			StringMessage = Left(StringMessage, Len(StringMessage) -1);
-		}
-		StringMessage = StringMessage$" X "$LocalMessage.Count;
-	}
-
-	CanvasColor = Canvas.DrawColor;
-
-	// first draw drop shadow string
-	Canvas.DrawColor = BlackColor;
-	Canvas.DrawColor.A = CanvasColor.A;
-	Canvas.SetPos( ScreenX+2, ScreenY+2 );
-	Canvas.DrawText( StringMessage, false, , , TextRenderInfo );
-
-	// now draw string with normal color
-	Canvas.DrawColor = CanvasColor;
-	Canvas.SetPos( ScreenX, ScreenY );
-	Canvas.DrawText( StringMessage, false, , , TextRenderInfo );
 }
 
 defaultproperties
