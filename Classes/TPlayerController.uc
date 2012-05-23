@@ -18,12 +18,6 @@ var bool bCurrentCamAnimAffectsFOV;
 
 var UTUIDataStore_StringAliasBindingsMap BoundEventsStringDataStore;
 
-/** message out put */
-simulated function Message(string str)
-{
-	LocalPlayer( Player ).ViewportClient.ViewportConsole.OutputText( str );
-}
-
 /** exec: raise weapon to ironsight */
 simulated exec function RaiseWeapon()
 {

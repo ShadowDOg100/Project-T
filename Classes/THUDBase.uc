@@ -344,6 +344,40 @@ simulated function DrawShadowedRotatedTile(texture2D Tex, Rotator Rot, float X, 
 	Canvas.DrawRotatedTile(Tex,Rot,XL,YL,U,V,UL,VL);
 }
 
+function DrawMessageText(HudLocalizedMessage LocalMessage, float ScreenX, float ScreenY)
+{
+	local color CanvasColor;
+	local string StringMessage;
+
+	if ( Canvas.Font == none )
+	{
+		Canvas.Font = GetFontSizeIndex(0);
+	}
+
+	StringMessage = LocalMessage.StringMessage;
+	if ( LocalMessage.Count > 0 )
+	{
+		if ( Right(StringMessage, 1) ~= "." )
+		{
+			StringMessage = Left(StringMessage, Len(StringMessage) -1);
+		}
+		StringMessage = StringMessage$" X "$LocalMessage.Count;
+	}
+
+	CanvasColor = Canvas.DrawColor;
+
+	// first draw drop shadow string
+	Canvas.DrawColor = BlackColor;
+	Canvas.DrawColor.A = CanvasColor.A;
+	Canvas.SetPos( ScreenX+2, ScreenY+2 );
+	Canvas.DrawText( StringMessage, false, , , TextRenderInfo );
+
+	// now draw string with normal color
+	Canvas.DrawColor = CanvasColor;
+	Canvas.SetPos( ScreenX, ScreenY );
+	Canvas.DrawText( StringMessage, false, , , TextRenderInfo );
+}
+
 defaultproperties
 {
 	ToolTipSepCoords=(U=260,V=379,UL=29,VL=27)
