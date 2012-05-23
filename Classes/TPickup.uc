@@ -1,146 +1,215 @@
-class TPickup extends Actor;
+class TPickup extends Actor
+        abstract;
 
 // Light Environment
 var() const editconst DynamicLightEnvironmentComponent LightEnvironment;
 
-// Replenish Ammo, Health, Armor
-var int value;
-var int restore;
-
 // Player
-var PlayerController PC;
+var TPawn Player;
+
+// Replenish Ammo, Health, Armor
+var int amount; // Final amount to replenish
+var int restore; // Amount to be restored
 
 // Weapon
-var class<TWeapon> touchWeap;
+var class<TWeapon> weapClass;
+var TWeapon Weapon;
 var int WeapSlot;
 var int WeapSubClass;
-
-// Touch
-var bool bTouch;
+var array<TWeapon> WeaponList;
 
 // Tell what item
 var string item;
 
+// Message
+var string message;
+
 // Ammunition
-var() int ammo;
+var int ammo;
 var int clipAmmo;
 
-//TPickup
-
+// Boolean
+var bool bTouch;
 
 /** Weapons **/
 // get weapon inventory slot
 function int getWeapSlot()
 {
-	return 0;
+	if (Weapon != none)
+        {
+                return Weapon.GetInventorySlot();
+        }
 }
 
 // get weapon subclass
 function int getWeapSubClass()
 {
-	return 0;
+	if (Weapon != none)
+	{
+                return Weapon.GetWeaponSubClass();
+        }
 }
 
 // get weapon ammo
 function int getAmmo()
 {
-	return 0;
+	if (Weapon != none)
+	{
+                return Weapon.GetAmmoCount();
+        }
 }
 
 // get weapon clip
 function int getClip()
 {
-	return 0;
+	if (Weapon != none)
+	{
+                return Weapon.GetClipCount();
+        }
 }
 
 /** Pawn **/
 // get pawn health
-function int GetHealth(Pawn P)
+function int getHealth()
 {
-        return TPawn(P).getHealth();
+        if (Player != none)
+        {
+                return Player.getHealth();
+        }
 }
 
 // set pawn health
-function SetHealth(Pawn P, int value)
+function setHealth(int value)
 {
-        if (value <= 100)
-                TPawn(P).setHealth(value);
-        else
-                TPawn(P).setHealth(100);
+        if (Player != none)
+        {
+                if (value <= 100)
+                {
+                        Player.setHealth(value);
+                }
+                else
+                {
+                        Player.setHealth(100);
+                }
+        }
 }
 
 // get pawn armor
-function int GetArmor(Pawn P)
+function int getArmor()
 {
-        return TPawn(P).getArmor();
+        if (Player != none)
+        {
+                return Player.getArmor();
+        }
 }
 
 // set pawn armor
-function SetArmor(Pawn P, int value)
+function setArmor(int value)
 {
-        if (value <= 100)
-                TPawn(P).setArmor(value);
-        else
+        if (Player != none)
         {
-                TPawn(P).setArmor(100);
+                if (value <= 100)
+                {
+                        Player.setArmor(value);
+                }
+                else
+                {
+                        Player.setArmor(100);
+                }
         }
 }
 
-// Touch
-function SetTouch(bool touch, optional class<TWeapon> weap, optional TPickup Pickup, optional string str)
+// Player touches pickup actor
+event Touch (Actor Other, PrimitiveComponent OtherComp, Object.Vector HitLocation, Object.Vector HitNormal)
 {
-        bTouch = touch;
-        //PickupActor = Pickup;
-        item = str;
+        local PlayerController PC;
 
-        switch(item)
+        PC = PlayerController(Pawn(Other).Controller);
+
+        if (PC != none)
         {
-                case "HP":
-                        (TGFxHudWrapper(PC.myHUD)).ToggleItemPickup();
-                break;
-
-                case "AP":
-                        (TGFxHudWrapper(PC.myHUD)).ToggleItemPickup();
-                break;
-
-                case "WP":
-                        touchWeap = weap;
-                        (TGFxHudWrapper(PC.myHUD)).ToggleWeaponPickup();
-                break;
+                bTouch = true;
+                Player = TPawn(Other);
+                Weapon = TWeapon(Player.Weapon);
+                WeapSlot = getWeapSlot();
+                WeapSubClass = getWeapSubClass();
+                WorldInfo.Game.BroadCast(Player,"Item touched");
         }
+}
+
+// Player untouches pickup actor
+event UnTouch(Actor Other)
+{
+        WorldInfo.Game.BroadCast(Player,"Item untouched");
+        bTouch = false;
+        Player = none;
+        Weapon = none;
+        WeapSlot = 0;
+        WeapSubClass = 0;
 }
 
 // Pickup Weapon or Item
-exec function PickUp()
+// Have exec Pickup in HUDWrapper and from there, display the pickup menu and call Pickup() at TPickup
+simulated function Pickup(optional class<TWeapon> weap)
 {
-        local int value;
+        if (btouch)
+        {
+                weapClass = weap;
 
-	local Inventory Inv;
-	local TPawn TP;
-	local int num1, num2;
-	local array<TWeapon> WeaponList;
-	TP = TPawn(PC.Pawn);
-	PC.ClientMessage("PickUp");
-	if(bTouch)
-	{
                 switch(item)
                 {
-                        case "HP":
-                                value = GetHealth(PC.Pawn) + 50;
-                                SetHealth(PC.Pawn,value);
-                                Destroy();
-                                (TGFxHudWrapper(PC.myHUD)).ToggleItemPickup();
-                                bTouch = false;
-                        break;
-                        
-                        case "AP":
-                                value = GetArmor(PC.Pawn) + 100;
-                                SetArmor(PC.Pawn,value);
-                                Destroy();
-                                (TGFxHudWrapper(PC.myHUD)).ToggleItemPickup();
-                                bTouch = false;
+                        case "":
+                                return;
                         break;
 
+                        case "HP":
+                                WorldInfo.Game.BroadCast(Player,"You Gained: "@restore@" Health.");
+                                // PlaySound()
+                                amount = getHealth() + restore;
+                                setHealth(amount);
+                        break;
+                
+                        case "AP":
+                                WorldInfo.Game.BroadCast(Player,"You Gained: "@restore@" Armor.");
+                                // PlaySound()
+                                amount = getArmor() + restore;
+                                setArmor(amount);
+                        break;
+
+                        case "WP":
+                                // PlaySound()
+                                Player.GetWeaponList(WeaponList,true);
+                                if(WeaponList[WeapSlot] != None)
+		                {
+			             if(WeaponList[WeapSlot].GetWeaponSubClass() == WeapSubClass)
+			             {
+				            WeaponList[WeapSlot].AddStorageAmmo(getAmmo() + getClip());
+				            bTouch = false;
+				            Destroy();
+			             }
+			             else
+			             {
+				            //swap weapon
+			             }
+		                }
+		                else
+		                {
+                                        if (Weapon != none)
+                                        {
+				            Player.CreateInventory(weapClass);
+				            Player.GetWeaponList(WeaponList, true);
+				            WeaponList[WeapSlot].SetAmmo(getAmmo());
+				            WeaponList[WeapSlot].SetClip(getClip());
+				        }
+		                }
+
+                        break;
+                }
+                
+                bTouch = false;
+                Destroy();
+        }
+        /*
                         case "WP":
                                 num1 = GetWeapSlot();
 		                num2 = GetWeapSubClass();
@@ -175,9 +244,7 @@ exec function PickUp()
 				            bTouch = false;
 			             }
 		                }
-                        break;
-                }
-	}
+        */
 }
 
 defaultproperties
