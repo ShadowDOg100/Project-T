@@ -217,7 +217,7 @@ function ToggleItemPickup()
 		}
 	}
 }
-*/
+
 defaultproperties
 {
 	bOpen = true;
