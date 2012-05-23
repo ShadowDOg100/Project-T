@@ -47,6 +47,8 @@ var float ResolutionScale, ResolutionScaleX;
 /** Cache viewport size to determine if it has changed */
 var int ViewX, ViewY;
 
+var bool bHudMessageRendered;
+
 simulated function PostBeginPlay()
 {
 	local Pawn P;
@@ -101,6 +103,9 @@ function ResolutionChanged()
  */
 event PostRender()
 {
+	// Clear the flag
+	bHudMessageRendered = false;
+
 	RenderDelta = WorldInfo.TimeSeconds - LastHUDRenderTime;
 	LastHUDRenderTime = WorldInfo.TimeSeconds;
 
