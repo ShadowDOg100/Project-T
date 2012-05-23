@@ -14,6 +14,11 @@ var TWeaponAttachment WeaponAttachment;
 /** crouch eye height */
 var float CrouchEyeHeight;
 
+/** stamina amount used for sprinting*/
+var float stamina;
+var bool useStamina;
+var bool canWalk; //used to make sure that the player does not become infinately slower
+
 /** default inventory */
 var array< class<Inventory> > Defaultinventory;
 
@@ -132,10 +137,71 @@ function SetMovementPhysics()
 	}
 }
 
+function tick(float DeltaTime)
+{
+    super.tick(DeltaTime);
+    
+    if(useStamina)
+    {
+        stamina = stamina - 1;
+        if(stamina <= 0)
+        {
+            endSprint();
+        }
+    }else if (!useStamina && stamina < 100)
+    {
+        stamina = stamina + 0.5;
+    }
+
+}
+
+/** changes the walking speed, if multiplier is greater than 1, speed increases, if it is a decimal, speed decreases*/
+simulated function changeWalkSpeed(float multiplier)
+{
+    GroundSpeed *= multiplier;
+}
+
+simulated function bool IsSprinting()
+{
+	return useStamina;
+}
+
+exec function sprint()
+{
+    if (stamina >0 && useStamina == false)
+    {
+       changeWalkSpeed(2);
+       useStamina = true;
+       PlayerController(Controller).ClientMessage("sprint stamina: ");
+       PlayerController(Controller).ClientMessage(stamina);
+       canWalk = true;
+	   if(Weapon != none)
+		   TWeapon(Weapon).StartSprint();
+    }
+}
+
+exec function endSprint()
+{
+    if(useStamina)
+    {
+        changeWalkSpeed(0.5);
+        useStamina = false;
+        canWalk = false;
+        PlayerController(Controller).ClientMessage("endSprint stamina: ");
+        PlayerController(Controller).ClientMessage(stamina);
+		if(Weapon != none)
+			TWeapon(Weapon).EndSprint();
+    }
+
+}
+
 /** overloaded: start crouch */
 simulated event StartCrouch(float HeightAdjust)
 {
-	SetBaseEyeHeight();
+        PlayerController(Controller).ClientMessage("StartCrouch");
+        changeWalkSpeed(0.5);
+	//SetBaseEyeHeight();
+	BaseEyeHeight = CrouchEyeHeight;
 	EyeHeight += HeightAdjust;
 	CrouchMeshZOffset = HeightAdjust;
 
@@ -148,7 +214,10 @@ simulated event StartCrouch(float HeightAdjust)
 /** overloaded: end crouch */
 simulated event EndCrouch(float HeightAdjust)
 {
-	SetBaseEyeHeight();
+        PlayerController(Controller).ClientMessage("EndCrouch");
+        changeWalkSpeed(2);
+	//SetBaseEyeHeight();
+	BaseEyeHeight = default.BaseEyeHeight;
 	EyeHeight -= HeightAdjust;
 	CrouchMeshZOffset = 0.0;
 
@@ -328,11 +397,14 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
-	GroundSpeed = 1760.0
+	GroundSpeed = 880.0
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
 	AccelRate = 2048.0
+	stamina = 100;
+	useStamina = false;
+	canWalk = false;
 	
 	// settings
 	bBlocksNavigation = true

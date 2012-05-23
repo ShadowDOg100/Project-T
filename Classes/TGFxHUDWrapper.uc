@@ -81,7 +81,7 @@ function CloseOtherMenus()
 {
 	if ( InventoryMovie != none && InventoryMovie.bMovieIsOpen )
 	{
-		InventoryMovie.StartCloseAnimation();
+		//InventoryMovie.StartCloseAnimation();
 		return;
 	}
 }
@@ -100,7 +100,6 @@ function ResolutionChanged()
 	CreateHUDMovie();
 	if ( bNeedInventoryMovie )
 	{
-		OpenWeaponSelection();
 	}
 }
 
@@ -149,133 +148,6 @@ event DrawHUD()
 	}
 }
 
-exec function MouseClick()
-{
-
-	if( !InventoryMovie.bMovieIsOpen )
-		return;
-	if(!bOpen)
-		return;
-	if ( PlayerOwner.Pawn != None )
-	{
-		if (InventoryMovie == None)
-		{
-			InventoryMovie = new class'GFxUI_Inventory';
-		}
-		ClearTimer('CloseInventory');
-		InventoryMovie.MouseClick();
-	}
-}
-
-/*
- * Toggle for  3D Inventory menu.
- */
-exec function OpenWeaponSelection(optional string mouse)
-{
-	local bool start;
-	local int equiped;
-
-	if(!bOpen)
-		return;
-
-	start = true;
-	if ( PlayerOwner.Pawn != None )
-	{
-		if (InventoryMovie == None)
-		{
-			InventoryMovie = new class'GFxUI_Inventory';
-		}
-
-		if( InventoryMovie.bMovieIsOpen )
-		{
-			equiped = InventoryMovie.GetOpen();
-			InventoryMovie.CloseOpen();
-			if(mouse == "up")
-			{
-				InventoryMovie.SetOpen(equiped-1);
-			}
-			else if (mouse == "down")
-			{
-				InventoryMovie.SetOpen(equiped+1);
-			}
-			SetTimer(0.3, false, 'OpenOpen');
-			ClearTimer('CloseInventory');
-			SetTimer(1, false, 'CloseInventory');
-		}
-		else
-		{
-			InventoryMovie.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
-			InventoryMovie.SetTimingMode(TM_Real);
-			InventoryMovie.Start(start);
-			SetTimer(1, false, 'CloseInventory');
-		}
-
-	}
-}
-
-exec function GotoOpenWeaponSelection(string num)
-{
-	local bool open;
-
-	if(!bOpen)
-		return;
-
-	open = false;
-	if ( PlayerOwner.Pawn != None )
-	{
-		if (InventoryMovie == None)
-		{
-			InventoryMovie = new class'GFxUI_Inventory';
-		}
-
-		InventoryMovie.LocalPlayerOwnerIndex = class'Engine'.static.GetEngine().GamePlayers.Find(LocalPlayer(PlayerOwner.Player));
-		InventoryMovie.SetTimingMode(TM_Real);
-		InventoryMovie.Start(open);
-		switchNum = num;
-		SetTimer(0.7, false, 'GotoInventoryTimer');
-	}
-}
-
-function SetbOpen()
-{
-	bOpen = false;
-}
-
-function OpenOpen()
-{
-	InventoryMovie.OpenOpen();
-}
-
-function UpdateEquippedWeapon()
-{
-	InventoryMovie.UpdateEquippedWeapon();
-}
-
-function CloseInventoryTimer()
-{
-	InventoryMovie.StartCloseAnimation();
-}
-
-function GotoInventoryTimer()
-{
-	InventoryMovie.Goto(switchNum);
-}
-
-function CloseInventory()
-{
-	SetTimer(0.1, false, 'CloseInventoryTimer');
-}
-
-function CompleteCloseTimer()
-{
-	if ( InventoryMovie != none )
-	{
-		InventoryMovie.Close(false);
-		bOpen = true;
-	}
-}
-
-/*
 // Weapon Pickup
 function ToggleWeaponPickup()
 {

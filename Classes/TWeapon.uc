@@ -84,6 +84,8 @@ var(Animations) name ArmAimAnim;
 var(Animations) name ArmAimIdleAnim;
 /** arm aim fire animation */
 var(Animations) name ArmAimFireAnim;
+/** arm run animation */
+var(Animations) name ArmRunAnim;
 
 // -------------------------------------- ANIMATION RATES
 /** arm idle anim rate */
@@ -102,6 +104,8 @@ var float ArmAimAnimRate;
 var float ArmAimIdleAnimRate;
 /** ar aim fire anim rate */
 var float ArmAimFireAnimRate;
+/** arm run animation rate */
+var float ArmRunAnimRate;
 
 // -------------------------------------- IRONSIGHT
 /** is aiming */
@@ -419,7 +423,10 @@ simulated function bool CanReload()
 	if(HasStorageAmmo() && !IsMagFull())
 	{
 		// can add further checks such as jumping or sprinting
-		return true;
+		if(!TPawn(Instigator).IsSprinting())
+		{
+			return true;
+		}
 	}
 	
 	return false;
@@ -777,6 +784,33 @@ simulated function Reload()
 	}
 }
 
+/** sprint anim */
+simulated function StartSprint()
+{
+	// if inactive then just exit
+	if(IsInState('Inactive'))
+	{
+		return;
+	}
+	
+	// clear idle if active
+	if(IsTimerActive('PlayIdleAnimation')) ClearTimer('PlayIdleAnimation');
+	
+	// clear raising if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponRaising');
+	
+	// clear lowering if active
+	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponLowering');
+	
+	PlayWeaponAnim(ArmRunAnim, ArmRunAnimRate, true);
+}
+
+/** sprint anim */
+simulated function EndSprint()
+{
+	SetTimer(0.01, false, 'PlayIdleAnimation');
+}
+
 /** ironsight aiming: raise weapon*/
 simulated function RaiseWeapon()
 {
@@ -846,7 +880,6 @@ simulated function LowerWeapon()
 	
 	// clear lowering if active
 	if(IsTimerActive('TimeWeaponRaising')) ClearTimer('TimeWeaponLowering');
-	
 	// disable aiming delay, used in various checks
 	bAimingDelay = false;
 	
@@ -888,8 +921,11 @@ simulated function TimeWeaponRaising()
 	// safe to normally play the animation
 	else
 	{
-		AimTime = PlayWeaponAnim(ArmAimANim, ArmAimAnimRate, false);
+		AimTime = PlayWeaponAnim(ArmAimAnim, ArmAimAnimRate, false);
 	}
+	
+	if(TPawn(Instigator).IsSprinting())
+		TPawn(Instigator).endSprint();
 	
 	// enable aiming
 	bIsAiming = true;
@@ -1014,8 +1050,9 @@ simulated function PlayFireEffects(byte FireModeNum, optional vector HitLocation
 {
 	if(ArmFireAnim != '')
 	{
+		if(TPawn(Instigator).IsSprinting())
+			TPawn(Instigator).endSprint();
 		PlayWeaponAnim(ArmFireAnim, ArmFireAnimRate, false);
-		
 		// fire anim was changed to aim fire so play normal fire anim for the firearm
 		if(ArmFireAnim == ArmAimFireAnim)
 		{
@@ -1232,6 +1269,7 @@ defaultproperties
 	ArmAimAnim = 1p_ToAim
 	ArmAimIdleAnim = 1p_AimIdle
 	ArmAimFireAnim = 1p_AimFire
+	ArmRunAnim = 1p_Sprint
 	
 	// -------------------------------------- ANIMATION RATES
 	ArmIdleAnimRate = 1.0
@@ -1242,6 +1280,7 @@ defaultproperties
 	ArmAimAnimRate = 1.0
 	ArmAimIdleAnimRate = 1.0
 	ArmAimFireAnimRate = 1.0
+	ArmRunAnimRate = 1.0
 	
 	// -------------------------------------- WEAPON SETTINGS
 	bInstantHit = true

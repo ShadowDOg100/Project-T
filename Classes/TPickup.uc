@@ -211,15 +211,15 @@ simulated function Pickup(optional class<TWeapon> weap)
         }
         /*
                         case "WP":
-                                num1 = PickupActor.GetWeapSlot();
-		                num2 = PickupActor.GetWeapSubClass();
+                                num1 = GetWeapSlot();
+		                num2 = GetWeapSubClass();
 		                TP.GetWeaponList(WeaponList,true);
 		                if(WeaponList[num1] != None)
 		                {
 			             if(WeaponList[num1].GetWeaponSubClass() == num2)
 			             {
-				            WeaponList[num1].AddStorageAmmo(PickupActor.getAmmo() + PickupActor.getClip());
-				            PickupActor.Destroy();
+				            WeaponList[num1].AddStorageAmmo(getAmmo() + getClip());
+				            Destroy();
 				            (TGFxHudWrapper(PC.myHUD)).ToggleWeaponPickup();
 				            bTouch = false;
 			             }
@@ -230,16 +230,16 @@ simulated function Pickup(optional class<TWeapon> weap)
 		                }
 		                else
 		                {
-			             PlayerOwner.ClientMessage("PickUp");
+			             PC.ClientMessage("PickUp");
 			             Inv = spawn(touchWeap);
 			             if ( Inv != None )
 			             {
-				            PlayerOwner.ClientMessage("PickUp");
+				            PC.ClientMessage("PickUp");
 				            TP.CreateInventory( touchWeap );
 				            TP.GetWeaponList(WeaponList, true);
-				            WeaponList[num1].SetAmmo(PickupActor.getAmmo());
-				            WeaponList[num1].SetClip(PickupActor.getClip());
-				            PickupActor.Destroy();
+				            WeaponList[num1].SetAmmo(getAmmo());
+				            WeaponList[num1].SetClip(getClip());
+				            Destroy();
 				            (TGFxHudWrapper(PC.myHUD)).ToggleWeaponPickup();
 				            bTouch = false;
 			             }
