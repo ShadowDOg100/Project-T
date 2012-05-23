@@ -40,5 +40,5 @@ defaultproperties
 	bIgnoreMouseInput=TRUE
     bEnableGammaCorrection = FALSE
     bDisplayWithHudOff = TRUE
-	MovieInfo=SwfMovie'T.PickUp'
+	MovieInfo=SwfMovie'T.UI.PickUp'
 }

@@ -104,7 +104,7 @@ defaultproperties
     bEnableGammaCorrection = FALSE
     bDisplayWithHudOff = TRUE
 	bInitialized = FALSE
-	MovieInfo=SwfMovie'T.HUD.Inventory'
+	MovieInfo=SwfMovie'T.UI.Inventory'
 	
 	WeaponClasses(00)=class'TWeap_Pistol_Generic';
 	WeaponClasses(01)=class'TWeap_Pistol_Burst';

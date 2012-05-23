@@ -148,7 +148,7 @@ function TickHud(float DeltaTime)
 defaultproperties
 {
 	bDisplayWithHudOff=FALSE
-	MovieInfo=SwfMovie'T.HUD'
+	MovieInfo=SwfMovie'T.UI.HUD'
 	bEnableGammaCorrection=false
 
 	bAllowInput=FALSE;
