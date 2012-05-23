@@ -368,7 +368,7 @@ function DisplayHUDMessage(string Message, optional float XOffsetPct = 0.05, opt
 		Height = YL * 2.0;
 
 		YCenter = Canvas.ClipY - YBuffer - (Height * 0.5);
-
+		/*
 		// Draw the Bar
 		Canvas.SetPos(0,YCenter - (BarHeight * 0.5) );
 		Canvas.DrawTile(AltHudTexture, Canvas.ClipX, BarHeight, 382, 441, 127, 16);
@@ -376,7 +376,7 @@ function DisplayHUDMessage(string Message, optional float XOffsetPct = 0.05, opt
 		// Draw the Symbol
 		Canvas.SetPos(XBuffer, YCenter - (Height * 0.5));
 		Canvas.DrawTile(AltHudTexture, Height * 1.33333, Height, 734,190, 82, 70);
-
+		*/
 		// Draw the Text
 		Canvas.SetPos(XBuffer + Height * 1.5, YCenter - (YL * 0.5));
 		Canvas.DrawText(Message);
