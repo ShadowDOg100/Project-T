@@ -2,6 +2,10 @@ class TPawn extends UDKPawn
 	config(Game)
 	placeable;
 
+//----------------------------------------FLASHLIGHT (Yes, I really did this)
+var TFlashLight FLight;
+var repnotify bool bFLightOn; //determines whether the flashlight is on or off
+
 // Armor
 var int armor;
 
@@ -27,6 +31,8 @@ replication
 {
 	if(bNetDirty)
 		WeaponAttachmentClass;
+	if(bNetDirty)
+		bFLightOn;
 }
 
 /** replicated event */
@@ -322,6 +328,37 @@ simulated function SwitchWeapon(byte NewGroup)
 	}
 }
 
+/**Sets up flashlight to start when the game begins*/
+simulated function PostBeginPlay()
+{
+	FLight = Spawn(class'TFlashLight',self);
+	FLight.SetBase(self);
+	FLight.LightComponent.SetEnabled(self.default.bFLightOn);
+	super.PostBeginPlay();
+}
+
+/**Calls the function to toggle the flashlight on and off*/
+simulated function ToggleFLight()
+{
+bFLightOn = !bFLightOn;
+FLightToggled();
+}
+
+/**Toggles the flashlight on and off*/
+simulated function FLightToggled()
+{
+	if(bFLightOn)
+	{
+		FLight.LightComponent.SetEnabled(false);
+		//FLight.LightComponent.SetEnabled(true);
+	}
+	else
+	{
+		FLight.LightComponent.SetEnabled(true);
+		//FLight.LightComponent.SetEnabled(false);
+	}
+}
+
 // get pawn health
 function int getHealth()
 {
@@ -389,6 +426,9 @@ defaultproperties
 	end object
 	CylinderComponent = CollisionCylinder
 	
+	//flashlight default settings
+	bFLightOn = true
+	
 	// pawn settings
 	CrouchHeight = +00.29.000000
 	CrouchRadius = +00.34.000000
@@ -397,7 +437,11 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
+<<<<<<< HEAD
+	GroundSpeed = 1760.0
+=======
 	GroundSpeed = 880.0
+>>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
@@ -420,7 +464,10 @@ defaultproperties
 	// camera
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
+<<<<<<< HEAD
+=======
 	
 	health = 50
 	armor = 0
+>>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 }
