@@ -159,6 +159,10 @@ function tick(float DeltaTime)
         stamina = stamina + 0.5;
     }
 
+	if(bFLightOn)
+	{
+		FLight.Rotation.Pitch = Controller.Rotation.Pitch;
+	}
 }
 
 /** changes the walking speed, if multiplier is greater than 1, speed increases, if it is a decimal, speed decreases*/
@@ -340,8 +344,8 @@ simulated function PostBeginPlay()
 /**Calls the function to toggle the flashlight on and off*/
 simulated function ToggleFLight()
 {
-bFLightOn = !bFLightOn;
-FLightToggled();
+	bFLightOn = !bFLightOn;
+	FLightToggled();
 }
 
 /**Toggles the flashlight on and off*/
@@ -437,11 +441,7 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
-<<<<<<< HEAD
-	GroundSpeed = 1760.0
-=======
 	GroundSpeed = 880.0
->>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
@@ -464,10 +464,7 @@ defaultproperties
 	// camera
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
-<<<<<<< HEAD
-=======
 	
 	health = 50
 	armor = 0
->>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 }
