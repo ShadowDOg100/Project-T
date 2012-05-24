@@ -2,6 +2,10 @@ class TPawn extends UDKPawn
 	config(Game)
 	placeable;
 
+//----------------------------------------FLASHLIGHT (Yes, I really did this)
+var TFlashLight FLight;
+var repnotify bool bFLightOn; //determines whether the flashlight is on or off
+	
 // -------------------------------------- WEAPON
 /** weapon attachment class */
 var repnotify class<TWeaponAttachment> WeaponAttachmentClass;
@@ -19,6 +23,8 @@ replication
 {
 	if(bNetDirty)
 		WeaponAttachmentClass;
+	if(bNetDirty)
+		bFLightOn;
 }
 
 /** replicated event */
@@ -250,6 +256,38 @@ simulated function SwitchWeapon(byte NewGroup)
 	}
 }
 
+/**Sets up flashlight to start when the game begins*/
+simulated function PostBeginPlay()
+{
+	FLight = Spawn(class'TFlashLight',self);
+	FLight.SetBase(self);
+	FLight.LightComponent.SetEnabled(self.default.bFLightOn);
+	super.PostBeginPlay();
+}
+
+/**Calls the function to toggle the flashlight on and off*/
+simulated function ToggleFLight()
+{
+bFLightOn = !bFLightOn;
+FLightToggled();
+}
+
+/**Toggles the flashlight on and off*/
+simulated function FLightToggled()
+{
+	if(bFLightOn)
+	{
+		FLight.LightComponent.SetEnabled(false);
+		//FLight.LightComponent.SetEnabled(true);
+	}
+	else
+	{
+		FLight.LightComponent.SetEnabled(true);
+		//FLight.LightComponent.SetEnabled(false);
+	}
+}
+
+
 defaultproperties
 {
 	InventoryManagerClass = class'TGame.TInventoryManager'
@@ -287,6 +325,9 @@ defaultproperties
 	end object
 	CylinderComponent = CollisionCylinder
 	
+	//flashlight default settings
+	bFLightOn = true
+	
 	// pawn settings
 	CrouchHeight = +00.29.000000
 	CrouchRadius = +00.34.000000
@@ -295,7 +336,7 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
-	GroundSpeed = 440.0
+	GroundSpeed = 1760.0
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
