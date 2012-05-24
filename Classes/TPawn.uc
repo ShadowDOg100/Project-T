@@ -159,9 +159,10 @@ function tick(float DeltaTime)
         stamina = stamina + 0.5;
     }
 
-	if(bFLightOn)
+	if(FLight != none)
 	{
-		FLight.Rotation.Pitch = Controller.Rotation.Pitch;
+		FLight.SetRotation(GetBaseAimRotation());
+		FLight.SetLocation(Location);
 	}
 }
 
@@ -336,7 +337,7 @@ simulated function SwitchWeapon(byte NewGroup)
 simulated function PostBeginPlay()
 {
 	FLight = Spawn(class'TFlashLight',self);
-	FLight.SetBase(self);
+	//FLight.SetBase(self);
 	FLight.LightComponent.SetEnabled(self.default.bFLightOn);
 	super.PostBeginPlay();
 }
