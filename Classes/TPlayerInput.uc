@@ -26,6 +26,11 @@ simulated exec function ChangeStance()
 	}
 }
 
+simulated exec function PickUp()
+{
+
+}
+
 defaultproperties
 {
 

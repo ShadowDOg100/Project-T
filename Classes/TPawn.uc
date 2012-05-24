@@ -5,19 +5,27 @@ class TPawn extends UDKPawn
 //----------------------------------------FLASHLIGHT (Yes, I really did this)
 var TFlashLight FLight;
 var repnotify bool bFLightOn; //determines whether the flashlight is on or off
-	
+
+// Armor
+var int armor;
+
 // -------------------------------------- WEAPON
 /** weapon attachment class */
 var repnotify class<TWeaponAttachment> WeaponAttachmentClass;
 /** weapon attachment */
 var TWeaponAttachment WeaponAttachment;
-	
-/** crouch eye height */ 
+
+/** crouch eye height */
 var float CrouchEyeHeight;
+
+/** stamina amount used for sprinting*/
+var float stamina;
+var bool useStamina;
+var bool canWalk; //used to make sure that the player does not become infinately slower
 
 /** default inventory */
 var array< class<Inventory> > Defaultinventory;
-	
+
 /** replication */
 replication
 {
@@ -40,7 +48,7 @@ simulated event ReplicatedEvent(name VarName)
 		super.ReplicatedEvent(VarName);
 	}
 }
-	
+
 /** replicated: weapon attachment changed */
 simulated function AttachWeapon()
 {
@@ -53,7 +61,7 @@ simulated function AttachWeapon()
 			WeaponAttachment.DetachFrom(Mesh);
 			WeaponAttachment.Destroy();
 		}
-		
+
 		// spawn weapon attachment
 		if(WeaponAttachmentClass != none)
 		{
@@ -65,7 +73,7 @@ simulated function AttachWeapon()
 			// destroy weapon attachment
 			WeaponAttachment = none;
 		}
-		
+
 		// attach weapon attachment
 		if(WeaponAttachment != none)
 		{
@@ -74,22 +82,22 @@ simulated function AttachWeapon()
 		}
 	}
 }
-	
+
 /** overloaded: play dying */
 simulated function PlayDying(class<DamageType> DamageType, vector HitLocation)
 {
 	// destory weapon attachment
 	WeaponAttachmentClass = none;
 	AttachWeapon();
-	
+
 	super.PlayDying(DamageType, HitLocation);
 }
-	
+
 /** overloaded: weapon fired */
 simulated function WeaponFired(Weapon InWeapon, bool bVieReplication, optional vector HitLocation)
 {
 	super.WeaponFired(InWeapon, bVieReplication, HitLocation);
-	
+
 	// play impact effects
 	if(WeaponAttachment != none)
 	{
@@ -100,7 +108,7 @@ simulated function WeaponFired(Weapon InWeapon, bool bVieReplication, optional v
 		}
 	}
 }
-	
+
 /** overloaded: process view rotation */
 simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRotation, out rotator out_DeltaRot)
 {
@@ -108,17 +116,17 @@ simulated function ProcessViewRotation(float DeltaTime, out rotator out_ViewRota
 	{
 		TWeapon(Weapon).ProcessViewRotation(DeltaTime, out_ViewRotation, out_DeltaRot);
 	}
-	
+
 	out_ViewRotation += out_DeltaRot;
 	out_DeltaRot = rot(0,0,0);
-	
+
 	if(PlayerController(Controller) != none)
 	{
 		out_ViewRotation = PlayerController(Controller).LimitViewRotation(out_ViewRotation, ViewPitchMin, ViewPitchMax);
 	}
 }
-	
-	
+
+
 /** set movement physics */
 function SetMovementPhysics()
 {
@@ -135,13 +143,74 @@ function SetMovementPhysics()
 	}
 }
 
+function tick(float DeltaTime)
+{
+    super.tick(DeltaTime);
+    
+    if(useStamina)
+    {
+        stamina = stamina - 1;
+        if(stamina <= 0)
+        {
+            endSprint();
+        }
+    }else if (!useStamina && stamina < 100)
+    {
+        stamina = stamina + 0.5;
+    }
+
+}
+
+/** changes the walking speed, if multiplier is greater than 1, speed increases, if it is a decimal, speed decreases*/
+simulated function changeWalkSpeed(float multiplier)
+{
+    GroundSpeed *= multiplier;
+}
+
+simulated function bool IsSprinting()
+{
+	return useStamina;
+}
+
+exec function sprint()
+{
+    if (stamina >0 && useStamina == false)
+    {
+       changeWalkSpeed(2);
+       useStamina = true;
+       PlayerController(Controller).ClientMessage("sprint stamina: ");
+       PlayerController(Controller).ClientMessage(stamina);
+       canWalk = true;
+	   if(Weapon != none)
+		   TWeapon(Weapon).StartSprint();
+    }
+}
+
+exec function endSprint()
+{
+    if(useStamina)
+    {
+        changeWalkSpeed(0.5);
+        useStamina = false;
+        canWalk = false;
+        PlayerController(Controller).ClientMessage("endSprint stamina: ");
+        PlayerController(Controller).ClientMessage(stamina);
+		if(Weapon != none)
+			TWeapon(Weapon).EndSprint();
+    }
+
+}
+
 /** overloaded: start crouch */
 simulated event StartCrouch(float HeightAdjust)
 {
-	SetBaseEyeHeight();
+        PlayerController(Controller).ClientMessage("StartCrouch");
+        changeWalkSpeed(0.5);
+	//SetBaseEyeHeight();
+	BaseEyeHeight = CrouchEyeHeight;
 	EyeHeight += HeightAdjust;
 	CrouchMeshZOffset = HeightAdjust;
-	
+
 	if(Mesh != none)
 	{
 		Mesh.SetTranslation(Mesh.Translation + vect(0,0,1) * HeightAdjust);
@@ -151,10 +220,13 @@ simulated event StartCrouch(float HeightAdjust)
 /** overloaded: end crouch */
 simulated event EndCrouch(float HeightAdjust)
 {
-	SetBaseEyeHeight();
+        PlayerController(Controller).ClientMessage("EndCrouch");
+        changeWalkSpeed(2);
+	//SetBaseEyeHeight();
+	BaseEyeHeight = default.BaseEyeHeight;
 	EyeHeight -= HeightAdjust;
 	CrouchMeshZOffset = 0.0;
-	
+
 	if(Mesh != none)
 	{
 		Mesh.SetTranslation(Mesh.Translation - vect(0,0,1) * HeightAdjust);
@@ -183,7 +255,7 @@ event UpdateEyeHeight(float DeltaTime)
 		bUpdateEyeHeight = false;
 		return;
 	}
-	
+
 	EyeHeight = FInterpTo(EyeHeight, BaseEyeHeight, DeltaTime, 10.0);
 }
 
@@ -204,7 +276,7 @@ simulated event vector GetPawnViewLocation()
 simulated event BecomeViewTarget(PlayerController PC)
 {
 	super.BecomeViewTarget(PC);
-	
+
 	if(LocalPlayer(PC.Player) != none)
 	{
 		bUpdateEyeHeight = true;
@@ -229,11 +301,11 @@ function AddDefualtInventory()
 {
 	local class<Inventory> InvClass;
 	local Inventory Inv;
-	
+
 	foreach DefaultInventory(InvClass)
 	{
 		Inv = FindInventoryType(InvClass);
-		
+
 		if(Inv == none)
 		{
 			CreateInventory(InvClass, Weapon != none);
@@ -287,15 +359,44 @@ simulated function FLightToggled()
 	}
 }
 
+// get pawn health
+function int getHealth()
+{
+        return health;
+}
+
+// set pawn health
+function setHealth(int value)
+{
+        if (value <= 100)
+                health = value;
+        else
+                health = 100;
+}
+
+// get pawn armor
+function int getArmor()
+{
+        return armor;
+}
+
+// set pawn armor
+function setArmor(int value)
+{
+        if (value <= 100)
+                armor = value;
+        else
+                armor = 100;
+}
 
 defaultproperties
 {
 	InventoryManagerClass = class'TGame.TInventoryManager'
 	ControllerClass = none
-	
+
 	// default inventory
 	DefaultInventory(0) = class'TGame.TWeap_Pistol_Generic'
-	
+
 	// mesh
 	begin object class=SkeletalMeshComponent name=SkelMesh
 		BlockZeroExtent = true
@@ -336,11 +437,18 @@ defaultproperties
 	BaseEyeHeight = +0038.000000
 	
 	// movement
+<<<<<<< HEAD
 	GroundSpeed = 1760.0
+=======
+	GroundSpeed = 880.0
+>>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 	WalkingPct = 0.4
 	CrouchedPct = 0.4
 	JumpZ = 322.0
 	AccelRate = 2048.0
+	stamina = 100;
+	useStamina = false;
+	canWalk = false;
 	
 	// settings
 	bBlocksNavigation = true
@@ -356,4 +464,10 @@ defaultproperties
 	// camera
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
+<<<<<<< HEAD
+=======
+	
+	health = 50
+	armor = 0
+>>>>>>> e25f7b00bc2de92366084393681938940fdd2ea2
 }

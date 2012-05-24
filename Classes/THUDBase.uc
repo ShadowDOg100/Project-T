@@ -1,5 +1,5 @@
 class THUDBase extends UDKHUD
-	dependson(UTWeapon)
+	dependson(TWeapon)
 	config(Game);
 
 /** GFx movie used for displaying pause menu */
@@ -46,6 +46,8 @@ var float ResolutionScale, ResolutionScaleX;
 
 /** Cache viewport size to determine if it has changed */
 var int ViewX, ViewY;
+
+var bool bHudMessageRendered;
 
 simulated function PostBeginPlay()
 {
@@ -101,6 +103,9 @@ function ResolutionChanged()
  */
 event PostRender()
 {
+	// Clear the flag
+	bHudMessageRendered = false;
+
 	RenderDelta = WorldInfo.TimeSeconds - LastHUDRenderTime;
 	LastHUDRenderTime = WorldInfo.TimeSeconds;
 
@@ -342,6 +347,42 @@ simulated function DrawShadowedRotatedTile(texture2D Tex, Rotator Rot, float X, 
 	Canvas.SetPos(X,Y);
 	Canvas.DrawColor = TileColor;
 	Canvas.DrawRotatedTile(Tex,Rot,XL,YL,U,V,UL,VL);
+}
+
+function DisplayHUDMessage(string Message, optional float XOffsetPct = 0.05, optional float YOffsetPct = 0.05)
+{
+	local float XL,YL;
+	local float BarHeight, Height, YBuffer, XBuffer, YCenter;
+
+	if (!bHudMessageRendered)
+	{
+		// Preset the Canvas
+		Canvas.SetDrawColor(255,255,255,255);
+		Canvas.Font = GetFontSizeIndex(2);
+		Canvas.StrLen(Message,XL,YL);
+
+		// Figure out sizes/positions
+		BarHeight = YL * 1.1;
+		YBuffer = Canvas.ClipY * YOffsetPct;
+		XBuffer = Canvas.ClipX * XOffsetPct;
+		Height = YL * 2.0;
+
+		YCenter = Canvas.ClipY - YBuffer - (Height * 0.5);
+		/*
+		// Draw the Bar
+		Canvas.SetPos(0,YCenter - (BarHeight * 0.5) );
+		Canvas.DrawTile(AltHudTexture, Canvas.ClipX, BarHeight, 382, 441, 127, 16);
+
+		// Draw the Symbol
+		Canvas.SetPos(XBuffer, YCenter - (Height * 0.5));
+		Canvas.DrawTile(AltHudTexture, Height * 1.33333, Height, 734,190, 82, 70);
+		*/
+		// Draw the Text
+		Canvas.SetPos(XBuffer + Height * 1.5, YCenter - (YL * 0.5));
+		Canvas.DrawText(Message);
+
+		bHudMessageRendered = true;
+	}
 }
 
 defaultproperties
