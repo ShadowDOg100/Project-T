@@ -466,6 +466,6 @@ defaultproperties
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
 	
-	health = 50
+	health = 100
 	armor = 0
 }

@@ -2,7 +2,7 @@ class GFxTHUD extends GFxMoviePlayer;
 
 var WorldInfo    ThisWorld;
 
-var GFxObject    RootMC, PlayerStatsMC, HealthMC, HealthTF, AmmoMC, ClipTF, AmmoTF;
+var GFxObject    RootMC, MiniMapMC, HealthMC, HealthTF, ClipTF, AmmoTF;
 
 var TWeapon      LastWeapon;
 var float        LastHealth, LastArmor;
@@ -41,14 +41,10 @@ function Init(optional LocalPlayer player)
 	LastClipCount = -110;
 
 	RootMC = GetVariableObject("_root");
-	PlayerStatsMC = RootMC.GetObject("PlayerStats");
-	HealthMC = PlayerStatsMC.GetObject("Health");
-	HealthTF = PlayerStatsMC.GetObject("HealthP");
-	AmmoTF = PlayerStatsMC.GetObject("Ammo");
-	ClipTF = PlayerStatsMC.GetObject("Clip");
-	AmmoMC = PlayerStatsMC.GetObject("Graphics");
+	MiniMapMC = RootMC.GetObject("PlayerStats");
+	HealthMC = MiniMapMC.GetObject("HealthBar");
 	
-    PlayerStatsMC.SetFloat("_yrotation", 15);
+    MiniMapMC.SetFloat("_yrotation", 15);
 }
 
 static function string FormatTime(int Seconds)
@@ -72,25 +68,20 @@ function ClearStats()
 {	
 	if (LastHealth != -10)
 	{
-		HealthTF.SetString("text", "");
+		//HealthTF.SetString("text", "");
 		//HealthBarMC.SetDisplayInfo(DI);
 		LastHealth = -10;
 	}
 	if (LastAmmoCount != -10)
 	{
-		AmmoTF.SetString("text", "");
-		AmmoMC.GotoAndStopI(0);
 		LastAmmoCount = -10;
 	}
 	if (LastClipCount != -10)
 	{
-		ClipTF.SetString("text", "");
-		AmmoMC.GotoAndStopI(0);
 		LastAmmoCount = -10;
 	}
 	if (LastWeapon != none)
 	{
-		AmmoMC.GotoAndStopI(0);
 		LastWeapon = none;
 	}
 }
@@ -109,7 +100,6 @@ function TickHud(float DeltaTime)
 	
 	if (LastHealth != TP.Health)
 	{
-		HealthTF.SetText(TP.Health);
 		LastHealth = TP.Health;
 		health.Type = ASType.AS_Number;
 		health.n = TP.Health;
@@ -134,21 +124,13 @@ function TickHud(float DeltaTime)
 			AmmoTF.SetText(i);
 			ClipTF.SetText(j);
 		}
-		
-		AmmoMC.GotoAndStopI(Weapon.GetInventorySlot() + 1);
-	}
-	else
-	{
-		AmmoMC.GotoAndStopI(0);
-		ClipTF.SetText("");
-		AmmoTF.SetText("");
 	}
 }
 
 defaultproperties
 {
 	bDisplayWithHudOff=FALSE
-	MovieInfo=SwfMovie'T.UI.HUD'
+	MovieInfo=SwfMovie'T.UI.THUD'
 	bEnableGammaCorrection=false
 
 	bAllowInput=FALSE;
