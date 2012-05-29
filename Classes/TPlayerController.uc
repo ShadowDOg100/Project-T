@@ -241,7 +241,7 @@ simulated exec function Reload()
 	
 	TWeapon(Pawn.Weapon).ReloadWeapon();
 }
-	
+
 defaultproperties
 {
 	CameraClass = class'TGame.TCamera'
