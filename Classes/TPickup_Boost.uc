@@ -38,14 +38,7 @@ event Touch (Actor Other, PrimitiveComponent OtherComp, Object.Vector HitLocatio
         }
 }
 
-// Player untouches pickup actor
-event UnTouch(Actor Other)
-{
-        WorldInfo.Game.BroadCast(Player,"Boost item untouched");
-
-}
-
 defaultproperties
 {
-        bShowHUD = false;
+        bShowHUD = false
 }

@@ -17,16 +17,14 @@ var TWeapon Weapon;
 var int WeapSlot;
 var int WeapSubClass;
 var array<TWeapon> WeaponList;
+var int ammo;
+var int clipAmmo;
 
 // Tell what item
 var string item;
 
 // Message
 var string message;
-
-// Ammunition
-var int ammo;
-var int clipAmmo;
 
 // Boolean
 var bool bTouch;
@@ -120,46 +118,68 @@ function setArmor(int value)
         }
 }
 
-// Pickup Weapon or Item
-simulated function Pickup()
+// Player touches pickup actor
+event Touch (Actor Other, PrimitiveComponent OtherComp, Object.Vector HitLocation, Object.Vector HitNormal)
 {
-        
-        /*
-                        case "WP":
-                                num1 = GetWeapSlot();
-		                num2 = GetWeapSubClass();
-		                TP.GetWeaponList(WeaponList,true);
-		                if(WeaponList[num1] != None)
-		                {
-			             if(WeaponList[num1].GetWeaponSubClass() == num2)
-			             {
-				            WeaponList[num1].AddStorageAmmo(getAmmo() + getClip());
-				            Destroy();
-				            (TGFxHudWrapper(PC.myHUD)).ToggleWeaponPickup();
-				            bTouch = false;
-			             }
-			             else
-			             {
-				            //swap weapon
-			             }
-		                }
-		                else
-		                {
-			             PC.ClientMessage("PickUp");
-			             Inv = spawn(touchWeap);
-			             if ( Inv != None )
-			             {
-				            PC.ClientMessage("PickUp");
-				            TP.CreateInventory( touchWeap );
-				            TP.GetWeaponList(WeaponList, true);
-				            WeaponList[num1].SetAmmo(getAmmo());
-				            WeaponList[num1].SetClip(getClip());
-				            Destroy();
-				            (TGFxHudWrapper(PC.myHUD)).ToggleWeaponPickup();
-				            bTouch = false;
-			             }
-		                }
-        */
+        local PlayerController PC;
+
+        PC = PlayerController(Pawn(Other).Controller);
+
+        if (PC != none)
+        {
+                WorldInfo.Game.BroadCast(Player,"Item touched");
+                if (bShowHUD)
+                {
+                        // show pickup hud
+                }
+        }
+}
+
+// Player untouches pickup actor
+event UnTouch(Actor Other)
+{
+        WorldInfo.Game.BroadCast(Player,"Item untouched");
+        bTouch = false;
+        bShowHUD = false;
+        Player = none;
+        Weapon = none;
+        WeapSlot = 0;
+        WeapSubClass = 0;
+}
+
+// Player picks up weapon
+simulated function PickupWeap()
+{
+        local Inventory Inv;
+
+        // PlaySound()
+        Player.GetWeaponList(WeaponList,true);
+        if(WeaponList[WeapSlot] != None)
+	{
+		if(WeaponList[WeapSlot].GetWeaponSubClass() == WeapSubClass)
+		{
+			WeaponList[WeapSlot].AddStorageAmmo(getAmmo() + getClip());
+			return;
+		}
+		else
+		{
+			//swap weapon
+		}
+	}
+	else
+	{
+                Inv = spawn(weapClass);
+                if (Inv != none)
+                {
+			Player.CreateInventory(weapClass);
+			Player.GetWeaponList(WeaponList, true);
+			WeaponList[WeapSlot].SetAmmo(getAmmo());
+			WeaponList[WeapSlot].SetClip(getClip());
+		}
+	}
+	
+	bTouch = false;
+        Destroy();
 }
 
 defaultproperties

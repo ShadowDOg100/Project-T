@@ -15,7 +15,7 @@ defaultproperties
 	End Object
 	Components.Add(Mesh)
         CollisionComponent=Mesh
-        CollisionType=COLLIDE_TouchAll;
+        CollisionType=COLLIDE_TouchAll
 
         item = "HP"
         restore = 50
