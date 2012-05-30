@@ -2,7 +2,7 @@ class GFxTHUD extends GFxMoviePlayer;
 
 var WorldInfo    ThisWorld;
 
-var GFxObject    RootMC, MiniMapMC, HealthMC, ArmorMC, ArmorTF;
+var GFxObject    RootMC, MiniMapMC, HealthMC, HealthTF, ArmorMC, ArmorTF;
 
 var TWeapon      LastWeapon;
 var float        LastHealth, LastArmor;
@@ -43,6 +43,7 @@ function Init(optional LocalPlayer player)
 	RootMC = GetVariableObject("_root");
 	MiniMapMC = RootMC.GetObject("MiniMap");
 	HealthMC = MiniMapMC.GetObject("HealthBar");
+	HealthTF = MiniMapMC.GetObject("HealthTF");
 	ArmorMC = MiniMapMC.GetObject("ArmorBar");
 	ArmorTF = MiniMapMC.GetObject("ArmorTF");
 	
@@ -114,6 +115,7 @@ function TickHud(float DeltaTime)
 		health.Type = ASType.AS_Number;
 		health.n = TP.Health;
 		args[0] = health;
+		HealthTF.SetText(""$LastHealth);
 		PC.ClientMessage(TP.Health);
 		update = true;
 	}
