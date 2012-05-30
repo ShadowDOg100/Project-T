@@ -2,6 +2,10 @@ class TPawn extends UDKPawn
 	config(Game)
 	placeable;
 
+//----------------------------------------FLASHLIGHT (Yes, I really did this)
+var TFlashLight FLight;
+var repnotify bool bFLightOn; //determines whether the flashlight is on or off
+
 // Armor
 var int armor;
 
@@ -28,6 +32,8 @@ replication
 {
 	if(bNetDirty)
 		WeaponAttachmentClass;
+	if(bNetDirty)
+		bFLightOn;
 }
 
 /** replicated event */
@@ -151,11 +157,6 @@ function tick(float DeltaTime)
     }else if (!useStamina && stamina < 100)
     {
         stamina = stamina + 0.5;
-    }
-    if(EyeHeight > 38.00)
-    {
-        PlayerController(Controller).ClientMessage("EyeHeight");
-        PlayerController(Controller).ClientMessage(EyeHeight);
     }
 }
 
@@ -330,6 +331,37 @@ simulated function SwitchWeapon(byte NewGroup)
 	}
 }
 
+/**Sets up flashlight to start when the game begins*/
+simulated function PostBeginPlay()
+{
+	FLight = Spawn(class'TFlashLight',self);
+	//FLight.SetBase(self);
+	FLight.LightComponent.SetEnabled(self.default.bFLightOn);
+	super.PostBeginPlay();
+}
+
+/**Calls the function to toggle the flashlight on and off*/
+simulated function ToggleFLight()
+{
+	bFLightOn = !bFLightOn;
+	FLightToggled();
+}
+
+/**Toggles the flashlight on and off*/
+simulated function FLightToggled()
+{
+	if(bFLightOn)
+	{
+		FLight.LightComponent.SetEnabled(false);
+		//FLight.LightComponent.SetEnabled(true);
+	}
+	else
+	{
+		FLight.LightComponent.SetEnabled(true);
+		//FLight.LightComponent.SetEnabled(false);
+	}
+}
+
 // get pawn health
 function int getHealth()
 {
@@ -397,6 +429,9 @@ defaultproperties
 	end object
 	CylinderComponent = CollisionCylinder
 	
+	//flashlight default settings
+	bFLightOn = true
+	
 	// pawn settings
 	CrouchHeight = +00.29.000000
 	CrouchRadius = +00.34.000000
@@ -430,6 +465,6 @@ defaultproperties
 	ViewPitchMin = -16000
 	ViewPitchMax = 14000
 	
-	health = 50
-	armor = 0
+	health = 100
+	armor = 100
 }

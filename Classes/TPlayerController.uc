@@ -232,6 +232,12 @@ function CheckJumpOrDuck()
 	}
 }
 
+/**Define the function made by execution of the F key */
+exec function ToggleFLight()
+{
+	TPawn(Pawn).ToggleFLight();
+}
+
 /* ------------------------------------------- WEAPONS ------------------------------------------- */
 
 /** exec: reload weapon */
