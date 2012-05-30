@@ -17,6 +17,7 @@ var TWeaponAttachment WeaponAttachment;
 
 /** crouch eye height */
 var float CrouchEyeHeight;
+var bool bCrouch;  //true if crouching, false if not
 
 /** stamina amount used for sprinting*/
 var float stamina;
@@ -146,7 +147,6 @@ function SetMovementPhysics()
 function tick(float DeltaTime)
 {
     super.tick(DeltaTime);
-    
     if(useStamina)
     {
         stamina = stamina - 1;
@@ -158,12 +158,6 @@ function tick(float DeltaTime)
     {
         stamina = stamina + 0.5;
     }
-
-	if(FLight != none)
-	{
-		FLight.SetRotation(GetBaseAimRotation());
-		FLight.SetLocation(Location);
-	}
 }
 
 /** changes the walking speed, if multiplier is greater than 1, speed increases, if it is a decimal, speed decreases*/
@@ -179,12 +173,10 @@ simulated function bool IsSprinting()
 
 exec function sprint()
 {
-    if (stamina >0 && useStamina == false)
+    if (stamina >0 && useStamina == false && bCrouch == false)
     {
        changeWalkSpeed(2);
        useStamina = true;
-       PlayerController(Controller).ClientMessage("sprint stamina: ");
-       PlayerController(Controller).ClientMessage(stamina);
        canWalk = true;
 	   if(Weapon != none)
 		   TWeapon(Weapon).StartSprint();
@@ -198,8 +190,6 @@ exec function endSprint()
         changeWalkSpeed(0.5);
         useStamina = false;
         canWalk = false;
-        PlayerController(Controller).ClientMessage("endSprint stamina: ");
-        PlayerController(Controller).ClientMessage(stamina);
 		if(Weapon != none)
 			TWeapon(Weapon).EndSprint();
     }
@@ -209,27 +199,27 @@ exec function endSprint()
 /** overloaded: start crouch */
 simulated event StartCrouch(float HeightAdjust)
 {
-        PlayerController(Controller).ClientMessage("StartCrouch");
+        bCrouch = true;
+        PlayerController(Controller).ClientMessage("StartCrouch");;
         changeWalkSpeed(0.5);
-	//SetBaseEyeHeight();
-	BaseEyeHeight = CrouchEyeHeight;
-	EyeHeight += HeightAdjust;
+	SetBaseEyeHeight();
+	//EyeHeight += HeightAdjust;
 	CrouchMeshZOffset = HeightAdjust;
 
 	if(Mesh != none)
 	{
-		Mesh.SetTranslation(Mesh.Translation + vect(0,0,1) * HeightAdjust);
+		//Mesh.SetTranslation(Mesh.Translation + vect(0,0,1) * HeightAdjust);
 	}
 }
 
 /** overloaded: end crouch */
 simulated event EndCrouch(float HeightAdjust)
 {
+        bCrouch = false;
         PlayerController(Controller).ClientMessage("EndCrouch");
         changeWalkSpeed(2);
-	//SetBaseEyeHeight();
-	BaseEyeHeight = default.BaseEyeHeight;
-	EyeHeight -= HeightAdjust;
+	SetBaseEyeHeight();
+	//EyeHeight -= HeightAdjust;
 	CrouchMeshZOffset = 0.0;
 
 	if(Mesh != none)
@@ -241,6 +231,9 @@ simulated event EndCrouch(float HeightAdjust)
 /** overloaded: force crouch height */
 simulated function SetBaseEyeHeight()
 {
+        PlayerController(Controller).ClientMessage("BaseEyeHeight before");
+        PlayerController(Controller).ClientMessage(BaseEyeHeight);
+
 	if(!bIsCrouched)
 	{
 		BaseEyeHeight = default.BaseEyeHeight;
@@ -249,6 +242,9 @@ simulated function SetBaseEyeHeight()
 	{
 		BaseEyeHeight = CrouchEyeHeight;
 	}
+        PlayerController(Controller).ClientMessage("BaseEyeHeight after");
+        PlayerController(Controller).ClientMessage(BaseEyeHeight);
+        
 }
 
 /** overloaded: interpolate eye height */
@@ -261,7 +257,9 @@ event UpdateEyeHeight(float DeltaTime)
 		return;
 	}
 
+
 	EyeHeight = FInterpTo(EyeHeight, BaseEyeHeight, DeltaTime, 10.0);
+
 }
 
 /** overloaded: get pawn view location */
@@ -450,6 +448,7 @@ defaultproperties
 	stamina = 100;
 	useStamina = false;
 	canWalk = false;
+	bCrouch = false;
 	
 	// settings
 	bBlocksNavigation = true
