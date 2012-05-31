@@ -115,7 +115,7 @@ function TickHud(float DeltaTime)
 		health.Type = ASType.AS_Number;
 		health.n = TP.Health;
 		args[0] = health;
-		HealthTF.SetText(""$LastHealth);
+		HealthTF.SetText(""$(int(LastHealth)));
 		PC.ClientMessage(TP.Health);
 		update = true;
 	}
