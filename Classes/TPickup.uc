@@ -127,7 +127,11 @@ event Touch (Actor Other, PrimitiveComponent OtherComp, Object.Vector HitLocatio
 
         if (PC != none)
         {
-                WorldInfo.Game.BroadCast(Player,"Item touched");
+                bTouch = true;
+                Player = TPawn(Other);
+                Weapon = TWeapon(Player.Weapon);
+
+                //WorldInfo.Game.BroadCast(Player,"Item touched");
                 if (bShowHUD)
                 {
                         // show pickup hud
@@ -145,41 +149,6 @@ event UnTouch(Actor Other)
         Weapon = none;
         WeapSlot = 0;
         WeapSubClass = 0;
-}
-
-// Player picks up weapon
-simulated function PickupWeap()
-{
-        local Inventory Inv;
-
-        // PlaySound()
-        Player.GetWeaponList(WeaponList,true);
-        if(WeaponList[WeapSlot] != None)
-	{
-		if(WeaponList[WeapSlot].GetWeaponSubClass() == WeapSubClass)
-		{
-			WeaponList[WeapSlot].AddStorageAmmo(getAmmo() + getClip());
-			return;
-		}
-		else
-		{
-			//swap weapon
-		}
-	}
-	else
-	{
-                Inv = spawn(weapClass);
-                if (Inv != none)
-                {
-			Player.CreateInventory(weapClass);
-			Player.GetWeaponList(WeaponList, true);
-			WeaponList[WeapSlot].SetAmmo(getAmmo());
-			WeaponList[WeapSlot].SetClip(getClip());
-		}
-	}
-	
-	bTouch = false;
-        Destroy();
 }
 
 defaultproperties

@@ -1,10 +1,10 @@
-class TPickup_Weapon_M16 extends TPickup_Weapon
+class TPickup_Weapon_Generic extends TPickup_Weapon
         placeable;
-
+        
 defaultproperties
 {
         bCollideActors=true
-	CollisionType=COLLIDE_TouchAll
+	CollisionType=COLLIDE_TouchAll;
 	Begin Object Class=DynamicLightEnvironmentComponent Name=MyLightEnvironment
 		bEnabled=true
 	End Object
@@ -12,7 +12,7 @@ defaultproperties
 	Components.Add(MyLightEnvironment)
 
 	Begin Object Class=SkeletalMeshComponent Name=PickupMesh
-		SkeletalMesh=SkeletalMesh'MyWeapons.SK_WP_SigCommando'
+		SkeletalMesh=SkeletalMesh'T.Mesh.SK_WP_Generic'
 		LightEnvironment=MyLightEnvironment
 	End Object
 
@@ -28,9 +28,9 @@ defaultproperties
 	CollisionComponent=CollisionCylinder
 	Components.Add(CollisionCylinder)
 
-        ammo = 120
-	clipAmmo = 30
-	WeapSlot = 3
+        ammo = 90
+	clipAmmo = 18
+	WeapSlot = 1
 	WeapSubClass = 1
-	weapClass = class'TGame.TWeap_AssaultRifle_M16'
+	weapClass = class'TGame.TWeap_Pistol_Generic'
 }

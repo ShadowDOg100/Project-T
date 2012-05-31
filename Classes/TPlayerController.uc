@@ -18,6 +18,8 @@ var bool bCurrentCamAnimAffectsFOV;
 
 var UTUIDataStore_StringAliasBindingsMap BoundEventsStringDataStore;
 
+var TPickup_Weapon tActor;
+
 /** exec: raise weapon to ironsight */
 simulated exec function RaiseWeapon()
 {
@@ -248,11 +250,25 @@ simulated exec function Reload()
 	TWeapon(Pawn.Weapon).ReloadWeapon();
 }
 
+// exec pickup weapon
+simulated exec function PickUp()
+{
+        if(tActor != none)
+        {
+                tActor.PickupWeap();
+        }
+}
+
+simulated function setTouched(TPickup_Weapon p)
+{
+        tActor = p;
+}
+
 defaultproperties
 {
 	CameraClass = class'TGame.TCamera'
 	InputClass = class'TGame.TPlayerInput'
-	
+
 	FOVAngle = 90.0f
 	DesiredFOV = 90.0f
 	DefaultFOV = 90.0f

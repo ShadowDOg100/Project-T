@@ -1098,6 +1098,8 @@ simulated function StopMuzzleFlashEffect()
 	}
 }
 
+// ----------------------------------------------------------------------------------- STATES
+
 /** state: active */
 simulated state Active
 {

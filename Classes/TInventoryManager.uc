@@ -136,6 +136,7 @@ simulated function Inventory CreateInventory(class<Inventory> NewInventoryItemCl
  
 simulated function bool AddInventory(Inventory NewItem, optional bool bDoNotActivate)
 {
+        WorldInfo.Game.BroadCast(Instigator,"Inventory give weapon");
 	return Super.AddInventory(NewItem, bDoNotActivate);
 }
 

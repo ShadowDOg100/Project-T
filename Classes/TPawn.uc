@@ -333,6 +333,16 @@ simulated function SwitchWeapon(byte NewGroup)
 	}
 }
 
+function GiveWeapon(Inventory inv)
+{
+        PlayerController(Controller).ClientMessage("Pawn give weapon 1");
+	if (TInventoryManager(InvManager) != None)
+	{
+                PlayerController(Controller).ClientMessage("Pawn give weapon 2");
+		TInventoryManager(InvManager).AddInventory(inv);
+	}
+}
+
 /**Sets up flashlight to start when the game begins*/
 simulated function PostBeginPlay()
 {
